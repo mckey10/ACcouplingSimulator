@@ -1,0 +1,59 @@
+{
+  "pv_inverter": {
+    "nominal_power_kw": 20000.0,
+    "response_time_seconds": 2.0,
+    "enabled": true
+  },
+  "bess_inverter": {
+    "nominal_power_kw": 10000.0,
+    "response_time_seconds": 2.0,
+    "enabled": true
+  },
+  "grid_license_limit_kw": 10000.0,
+  "pyranometer_wm2": 1500.0,
+  "local_load_kw": 0.0,
+  "simulation_step_seconds": 1.0,
+  "modbus": {
+    "pv_inverter": {
+      "host": "127.0.0.1",
+      "port": 15001,
+      "unit_id": 1,
+      "enabled": true
+    },
+    "pcs_inverter": {
+      "host": "127.0.0.1",
+      "port": 15002,
+      "unit_id": 2,
+      "enabled": true
+    },
+    "grid_meter": {
+      "host": "127.0.0.1",
+      "port": 15003,
+      "unit_id": 3,
+      "enabled": true
+    },
+    "pv_meter": {
+      "host": "127.0.0.1",
+      "port": 15004,
+      "unit_id": 4,
+      "enabled": true
+    },
+    "bess_meter": {
+      "host": "127.0.0.1",
+      "port": 15005,
+      "unit_id": 5,
+      "enabled": true
+    },
+    "simulation_controller": {
+      "host": "127.0.0.1",
+      "port": 15010,
+      "unit_id": 10,
+      "enabled": true
+    }
+  },
+  "hmi": {
+    "host": "127.0.0.1",
+    "port": 18080,
+    "enabled": true
+  }
+}
