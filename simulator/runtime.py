@@ -37,15 +37,25 @@ class SimulationRuntime:
         *,
         pv_setpoint_pct: float | None = None,
         pcs_setpoint_pct: float | None = None,
+        pv_reactive_power_setpoint_pct: float | None = None,
+        pv_cos_phi_setpoint: float | None = None,
         pyranometer_wm2: float | None = None,
         local_load_kw: float | None = None,
+        reactive_control_mode: int | None = None,
+        voltage_min_kv: float | None = None,
+        voltage_max_kv: float | None = None,
     ) -> None:
         with self._lock:
             self.engine.update_inputs(
                 pv_setpoint_pct=pv_setpoint_pct,
                 pcs_setpoint_pct=pcs_setpoint_pct,
+                pv_reactive_power_setpoint_pct=pv_reactive_power_setpoint_pct,
+                pv_cos_phi_setpoint=pv_cos_phi_setpoint,
                 pyranometer_wm2=pyranometer_wm2,
                 local_load_kw=local_load_kw,
+                reactive_control_mode=reactive_control_mode,
+                voltage_min_kv=voltage_min_kv,
+                voltage_max_kv=voltage_max_kv,
             )
 
     def set_grid_license_limit_kw(self, value: float) -> None:
@@ -95,8 +105,13 @@ class SimulationRuntime:
             return {
                 "pv_setpoint_pct": self.engine.inputs.pv_setpoint_pct,
                 "pcs_setpoint_pct": self.engine.inputs.pcs_setpoint_pct,
+                "pv_reactive_power_setpoint_pct": self.engine.inputs.pv_reactive_power_setpoint_pct,
+                "pv_cos_phi_setpoint": self.engine.inputs.pv_cos_phi_setpoint,
                 "pyranometer_wm2": self.engine.inputs.pyranometer_wm2,
                 "local_load_kw": self.engine.inputs.local_load_kw,
+                "reactive_control_mode": self.engine.inputs.reactive_control_mode,
+                "voltage_min_kv": self.engine.inputs.voltage_min_kv,
+                "voltage_max_kv": self.engine.inputs.voltage_max_kv,
                 "pv_enabled": self.engine.pv.enabled,
                 "bess_enabled": self.engine.bess.enabled,
                 "pv_nominal_power_kw": self.engine.pv.nominal_power_kw,
@@ -105,9 +120,19 @@ class SimulationRuntime:
                 "pv_target_power_kw": snapshot.pv_target_power_kw,
                 "pv_available_power_kw": snapshot.pv_available_power_kw,
                 "pv_actual_power_kw": snapshot.pv_actual_power_kw,
+                "pv_target_reactive_power_kvar": snapshot.pv_target_reactive_power_kvar,
+                "pv_actual_reactive_power_kvar": snapshot.pv_actual_reactive_power_kvar,
+                "pv_cos_phi": snapshot.pv_cos_phi,
+                "pv_voltage_kv": snapshot.pv_voltage_kv,
                 "bess_target_power_kw": snapshot.bess_target_power_kw,
                 "bess_actual_power_kw": snapshot.bess_actual_power_kw,
+                "bess_reactive_power_kvar": snapshot.bess_reactive_power_kvar,
+                "bess_cos_phi": snapshot.bess_cos_phi,
+                "bess_voltage_kv": snapshot.bess_voltage_kv,
                 "grid_active_power_kw": snapshot.grid_active_power_kw,
+                "grid_reactive_power_kvar": snapshot.grid_reactive_power_kvar,
+                "grid_cos_phi": snapshot.grid_cos_phi,
+                "grid_voltage_kv": snapshot.grid_voltage_kv,
                 "grid_direction": self.engine.grid.direction,
                 "grid_limit_exceeded": self.engine.grid.limit_exceeded,
             }
@@ -123,8 +148,11 @@ class SimulationRuntime:
                 {
                     "timestamp": int(time.time()),
                     "pv_power_kw": self._last_snapshot.pv_actual_power_kw,
+                    "pv_reactive_power_kvar": self._last_snapshot.pv_actual_reactive_power_kvar,
                     "bess_power_kw": self._last_snapshot.bess_actual_power_kw,
+                    "bess_reactive_power_kvar": self._last_snapshot.bess_reactive_power_kvar,
                     "grid_power_kw": self._last_snapshot.grid_active_power_kw,
+                    "grid_reactive_power_kvar": self._last_snapshot.grid_reactive_power_kvar,
                 }
             )
             return self._last_snapshot

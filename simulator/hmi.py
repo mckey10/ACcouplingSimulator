@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 
 from simulator.config import SimulationConfig
 from simulator.runtime import SimulationRuntime
+from simulator.service_manager import ModbusServiceManager
 
 
 HTML_PAGE = """<!doctype html>
@@ -77,17 +78,33 @@ HTML_PAGE = """<!doctype html>
       color: #fff;
       border-color: var(--accent);
     }
+    .meter-groups {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .meter-group {
+      padding: 12px;
+      border-radius: 16px;
+      background: #f9f4ec;
+      border: 1px solid #e5d8c8;
+    }
+    .meter-group h3 {
+      margin: 0 0 10px;
+      font-size: 0.98rem;
+    }
     .metrics {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
-      margin-top: 8px;
+      margin-top: 0;
     }
     .metric {
       padding: 12px;
       border-radius: 14px;
-      background: #f9f4ec;
-      border: 1px solid #e5d8c8;
+      background: #fffdf8;
+      border: 1px solid #eadfce;
     }
     .metric strong {
       display: block;
@@ -206,6 +223,7 @@ HTML_PAGE = """<!doctype html>
     }
     @media (max-width: 640px) {
       main { padding: 14px; }
+      .metrics { grid-template-columns: 1fr; }
       .production-grid, .pill-grid { grid-template-columns: 1fr; }
     }
   </style>
@@ -221,13 +239,43 @@ HTML_PAGE = """<!doctype html>
         <a href="/modbus">Modbus Config</a>
       </div>
     </div>
-    <div class="metrics">
-      <div class="metric"><span>PV Power</span><strong id="pv-power">0.0 kW</strong></div>
-      <div class="metric"><span>BESS Power</span><strong id="bess-power">0.0 kW</strong></div>
-      <div class="metric"><span>Grid Power</span><strong id="grid-power">0.0 kW</strong></div>
-      <div class="metric"><span>Grid Direction</span><strong id="grid-direction">idle</strong></div>
-      <div class="metric"><span>Pyranometer</span><strong id="pyranometer">0 W/m2</strong></div>
-      <div class="metric"><span>Local Load</span><strong id="local-load">0.0 kW</strong></div>
+    <div class="meter-groups">
+      <div class="meter-group">
+        <h3>PV Meter</h3>
+        <div class="metrics">
+          <div class="metric"><span>Power</span><strong id="pv-power">0.0 kW</strong></div>
+          <div class="metric"><span>Reactive</span><strong id="pv-reactive">0.0 kVAr</strong></div>
+          <div class="metric"><span>Cos Phi</span><strong id="pv-cosphi-top">1.000</strong></div>
+          <div class="metric"><span>Voltage</span><strong id="pv-voltage-top">22.0 kV</strong></div>
+        </div>
+      </div>
+      <div class="meter-group">
+        <h3>BESS Meter</h3>
+        <div class="metrics">
+          <div class="metric"><span>Power</span><strong id="bess-power">0.0 kW</strong></div>
+          <div class="metric"><span>Reactive</span><strong id="bess-reactive">0.0 kVAr</strong></div>
+          <div class="metric"><span>Cos Phi</span><strong id="bess-cosphi-top">1.000</strong></div>
+          <div class="metric"><span>Voltage</span><strong id="bess-voltage-top">22.0 kV</strong></div>
+        </div>
+      </div>
+      <div class="meter-group">
+        <h3>Grid Meter</h3>
+        <div class="metrics">
+          <div class="metric"><span>Power</span><strong id="grid-power">0.0 kW</strong></div>
+          <div class="metric"><span>Reactive</span><strong id="grid-reactive">0.0 kVAr</strong></div>
+          <div class="metric"><span>Direction</span><strong id="grid-direction">idle</strong></div>
+          <div class="metric"><span>Voltage</span><strong id="grid-voltage">0.0 kV</strong></div>
+        </div>
+      </div>
+      <div class="meter-group">
+        <h3>Simulation</h3>
+        <div class="metrics">
+          <div class="metric"><span>Pyranometer</span><strong id="pyranometer">0 W/m2</strong></div>
+          <div class="metric"><span>Local Load</span><strong id="local-load">0.0 kW</strong></div>
+          <div class="metric"><span>Reactive Mode</span><strong id="reactive-mode-top">Q</strong></div>
+          <div class="metric"><span>Voltage Range</span><strong id="voltage-range-top">20.0 - 24.0 kV</strong></div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -271,11 +319,29 @@ HTML_PAGE = """<!doctype html>
             <label>PCS Nominal kW
               <input type="number" step="0.1" name="pcs_nominal_power_kw">
             </label>
+            <label>Reactive Control Mode
+              <select name="reactive_control_mode">
+                <option value="0">Reactive Power</option>
+                <option value="1">Cos Phi</option>
+              </select>
+            </label>
+            <label>PV Reactive Setpoint %
+              <input type="number" step="0.1" name="pv_reactive_power_setpoint_pct">
+            </label>
+            <label>PV Cos Phi Setpoint
+              <input type="number" step="0.001" min="-1" max="1" name="pv_cos_phi_setpoint">
+            </label>
             <label>Pyranometer W/m2
               <input type="number" step="1" name="pyranometer_wm2">
             </label>
             <label>Local Load kW
               <input type="number" step="0.1" name="local_load_kw">
+            </label>
+            <label>Voltage Min kV
+              <input type="number" step="0.1" name="voltage_min_kv">
+            </label>
+            <label>Voltage Max kV
+              <input type="number" step="0.1" name="voltage_max_kv">
             </label>
             <label>Grid License kW
               <input type="number" step="0.1" name="grid_license_limit_kw">
@@ -301,6 +367,12 @@ HTML_PAGE = """<!doctype html>
           <div class="kpi"><span>Grid License</span><strong id="grid-license-view">0.0 kW</strong></div>
           <div class="kpi"><span>PV Nominal</span><strong id="pv-nominal-view">0.0 kW</strong></div>
           <div class="kpi"><span>PCS Nominal</span><strong id="pcs-nominal-view">0.0 kW</strong></div>
+          <div class="kpi"><span>PV Cos Phi</span><strong id="pv-cosphi-view">1.000</strong></div>
+          <div class="kpi"><span>Grid Cos Phi</span><strong id="grid-cosphi-view">1.000</strong></div>
+          <div class="kpi"><span>PV Voltage</span><strong id="pv-voltage-view">22.0 kV</strong></div>
+          <div class="kpi"><span>BESS Voltage</span><strong id="bess-voltage-view">22.0 kV</strong></div>
+          <div class="kpi"><span>Voltage Limits</span><strong id="voltage-limits-view">20.0 - 24.0 kV</strong></div>
+          <div class="kpi"><span>Reactive Mode</span><strong id="reactive-mode-view">Q</strong></div>
         </div>
       </article>
     </div>
@@ -317,8 +389,13 @@ HTML_PAGE = """<!doctype html>
     form.pcs_setpoint_pct.value = state.pcs_setpoint_pct;
     form.pv_nominal_power_kw.value = state.pv_nominal_power_kw;
     form.pcs_nominal_power_kw.value = state.pcs_nominal_power_kw;
+    form.reactive_control_mode.value = String(state.reactive_control_mode);
+    form.pv_reactive_power_setpoint_pct.value = state.pv_reactive_power_setpoint_pct;
+    form.pv_cos_phi_setpoint.value = state.pv_cos_phi_setpoint;
     form.pyranometer_wm2.value = state.pyranometer_wm2;
     form.local_load_kw.value = state.local_load_kw;
+    form.voltage_min_kv.value = state.voltage_min_kv;
+    form.voltage_max_kv.value = state.voltage_max_kv;
     form.grid_license_limit_kw.value = state.grid_license_limit_kw;
     form.pv_enabled.value = String(state.pv_enabled);
     form.bess_enabled.value = String(state.bess_enabled);
@@ -384,17 +461,33 @@ HTML_PAGE = """<!doctype html>
     const payload = await response.json();
     const state = payload.state;
     setText("pv-power", `${state.pv_actual_power_kw.toFixed(1)} kW`);
+    setText("pv-reactive", `${state.pv_actual_reactive_power_kvar.toFixed(1)} kVAr`);
     setText("bess-power", `${state.bess_actual_power_kw.toFixed(1)} kW`);
+    setText("bess-reactive", `${state.bess_reactive_power_kvar.toFixed(1)} kVAr`);
     setText("grid-power", `${state.grid_active_power_kw.toFixed(1)} kW`);
+    setText("grid-reactive", `${state.grid_reactive_power_kvar.toFixed(1)} kVAr`);
     setText("grid-direction", state.grid_direction);
     setText("pyranometer", `${state.pyranometer_wm2.toFixed(0)} W/m2`);
     setText("local-load", `${state.local_load_kw.toFixed(1)} kW`);
+    setText("grid-voltage", `${state.grid_voltage_kv.toFixed(2)} kV`);
+    setText("pv-cosphi-top", state.pv_cos_phi.toFixed(3));
+    setText("pv-voltage-top", `${state.pv_voltage_kv.toFixed(2)} kV`);
+    setText("bess-cosphi-top", state.bess_cos_phi.toFixed(3));
+    setText("bess-voltage-top", `${state.bess_voltage_kv.toFixed(2)} kV`);
+    setText("reactive-mode-top", state.reactive_control_mode === 0 ? "Q" : "Cos Phi");
+    setText("voltage-range-top", `${state.voltage_min_kv.toFixed(1)} - ${state.voltage_max_kv.toFixed(1)} kV`);
     setText("pv-setpoint-view", `${state.pv_setpoint_pct.toFixed(1)} %`);
     setText("pcs-setpoint-view", `${state.pcs_setpoint_pct.toFixed(1)} %`);
     setText("pv-available-view", `${state.pv_available_power_kw.toFixed(1)} kW`);
     setText("grid-license-view", `${state.grid_license_limit_kw.toFixed(1)} kW`);
     setText("pv-nominal-view", `${state.pv_nominal_power_kw.toFixed(1)} kW`);
     setText("pcs-nominal-view", `${state.pcs_nominal_power_kw.toFixed(1)} kW`);
+    setText("pv-cosphi-view", state.pv_cos_phi.toFixed(3));
+    setText("grid-cosphi-view", state.grid_cos_phi.toFixed(3));
+    setText("pv-voltage-view", `${state.pv_voltage_kv.toFixed(2)} kV`);
+    setText("bess-voltage-view", `${state.bess_voltage_kv.toFixed(2)} kV`);
+    setText("voltage-limits-view", `${state.voltage_min_kv.toFixed(1)} - ${state.voltage_max_kv.toFixed(1)} kV`);
+    setText("reactive-mode-view", state.reactive_control_mode === 0 ? "Q" : "Cos Phi");
     document.getElementById("state-json").textContent = JSON.stringify(payload, null, 2);
     renderChart(payload.history);
     if (initial) {
@@ -410,8 +503,13 @@ HTML_PAGE = """<!doctype html>
       pcs_setpoint_pct: Number(form.pcs_setpoint_pct.value),
       pv_nominal_power_kw: Number(form.pv_nominal_power_kw.value),
       pcs_nominal_power_kw: Number(form.pcs_nominal_power_kw.value),
+      reactive_control_mode: Number(form.reactive_control_mode.value),
+      pv_reactive_power_setpoint_pct: Number(form.pv_reactive_power_setpoint_pct.value),
+      pv_cos_phi_setpoint: Number(form.pv_cos_phi_setpoint.value),
       pyranometer_wm2: Number(form.pyranometer_wm2.value),
       local_load_kw: Number(form.local_load_kw.value),
+      voltage_min_kv: Number(form.voltage_min_kv.value),
+      voltage_max_kv: Number(form.voltage_max_kv.value),
       grid_license_limit_kw: Number(form.grid_license_limit_kw.value),
       pv_enabled: form.pv_enabled.value === "true",
       bess_enabled: form.bess_enabled.value === "true"
@@ -555,6 +653,7 @@ MODBUS_PAGE = """<!doctype html>
 <script>
   const deviceKeys = ["pv_inverter", "pcs_inverter", "grid_meter", "pv_meter", "bess_meter", "simulation_controller"];
   const setpointRegisterDevices = new Set(["pv_inverter", "pcs_inverter"]);
+  const reactiveRegisterDevices = new Set(["pv_inverter"]);
 
   function renderModbus(modbus) {
     const form = document.getElementById("modbus-form");
@@ -567,6 +666,16 @@ MODBUS_PAGE = """<!doctype html>
         ? `<label>Setpoint Holding Register
              <input name="${key}.setpoint_register_address" type="number" min="0" value="${cfg.setpoint_register_address ?? 0}">
            </label>`
+        : "";
+      const reactiveRows = reactiveRegisterDevices.has(key)
+        ? `<div class="two">
+             <label>Reactive Power Register
+               <input name="${key}.reactive_power_register_address" type="number" min="0" value="${cfg.reactive_power_register_address ?? 20}">
+             </label>
+             <label>Cos Phi Register
+               <input name="${key}.cos_phi_register_address" type="number" min="0" value="${cfg.cos_phi_register_address ?? 40}">
+             </label>
+           </div>`
         : "";
       block.innerHTML = `
         <h3>${key}</h3>
@@ -583,7 +692,8 @@ MODBUS_PAGE = """<!doctype html>
             </select>
           </label>
         </div>
-        ${setpointRow}`;
+        ${setpointRow}
+        ${reactiveRows}`;
       form.appendChild(block);
     }
   }
@@ -651,8 +761,8 @@ class HmiRequestHandler(BaseHTTPRequestHandler):
             self._send_json({"message": "Runtime values updated."})
             return
         if path == "/api/config/modbus":
-            self.server.save_modbus_config(payload)
-            self._send_json({"message": "Modbus config saved to JSON. Restart required to rebind servers."})
+            message = self.server.save_modbus_config(payload)
+            self._send_json({"message": message})
             return
         self.send_error(HTTPStatus.NOT_FOUND)
 
@@ -677,11 +787,19 @@ class HmiRequestHandler(BaseHTTPRequestHandler):
 
 
 class HmiServer(ThreadingHTTPServer):
-    def __init__(self, server_address: tuple[str, int], runtime: SimulationRuntime, config: SimulationConfig, config_path: Path):
+    def __init__(
+        self,
+        server_address: tuple[str, int],
+        runtime: SimulationRuntime,
+        config: SimulationConfig,
+        config_path: Path,
+        modbus_manager: ModbusServiceManager | None = None,
+    ):
         super().__init__(server_address, HmiRequestHandler)
         self.runtime = runtime
         self.config = config
         self.config_path = config_path
+        self.modbus_manager = modbus_manager
 
     def build_state_payload(self) -> dict:
         state = self.runtime.get_engine_state()
@@ -695,8 +813,13 @@ class HmiServer(ThreadingHTTPServer):
         self.runtime.update_inputs(
             pv_setpoint_pct=float(payload.get("pv_setpoint_pct", self.runtime.get_engine_state()["pv_setpoint_pct"])),
             pcs_setpoint_pct=float(payload.get("pcs_setpoint_pct", self.runtime.get_engine_state()["pcs_setpoint_pct"])),
+            pv_reactive_power_setpoint_pct=float(payload.get("pv_reactive_power_setpoint_pct", self.runtime.get_engine_state()["pv_reactive_power_setpoint_pct"])),
+            pv_cos_phi_setpoint=float(payload.get("pv_cos_phi_setpoint", self.runtime.get_engine_state()["pv_cos_phi_setpoint"])),
             pyranometer_wm2=float(payload.get("pyranometer_wm2", self.runtime.get_engine_state()["pyranometer_wm2"])),
             local_load_kw=float(payload.get("local_load_kw", self.runtime.get_engine_state()["local_load_kw"])),
+            reactive_control_mode=int(payload.get("reactive_control_mode", self.runtime.get_engine_state()["reactive_control_mode"])),
+            voltage_min_kv=float(payload.get("voltage_min_kv", self.runtime.get_engine_state()["voltage_min_kv"])),
+            voltage_max_kv=float(payload.get("voltage_max_kv", self.runtime.get_engine_state()["voltage_max_kv"])),
         )
         if "pv_nominal_power_kw" in payload:
             self.runtime.set_nominal_power_kw("pv", float(payload["pv_nominal_power_kw"]))
@@ -708,7 +831,7 @@ class HmiServer(ThreadingHTTPServer):
         if "bess_enabled" in payload:
             self.runtime.set_device_enabled("bess", bool(payload["bess_enabled"]))
 
-    def save_modbus_config(self, payload: dict) -> None:
+    def save_modbus_config(self, payload: dict) -> str:
         for device_name, values in payload.items():
             if not hasattr(self.config.modbus, device_name):
                 continue
@@ -719,7 +842,15 @@ class HmiServer(ThreadingHTTPServer):
             device.enabled = bool(values.get("enabled", device.enabled))
             if "setpoint_register_address" in values:
                 device.setpoint_register_address = max(0, int(values["setpoint_register_address"]))
+            if "reactive_power_register_address" in values:
+                device.reactive_power_register_address = max(0, int(values["reactive_power_register_address"]))
+            if "cos_phi_register_address" in values:
+                device.cos_phi_register_address = max(0, int(values["cos_phi_register_address"]))
         self.config.save(self.config_path)
+        if self.modbus_manager is not None:
+            self.modbus_manager.reload(self.config.modbus)
+            return "Modbus config saved and Modbus services restarted."
+        return "Modbus config saved to JSON."
 
     def _modbus_snapshot(self) -> dict:
         result = {}
@@ -738,6 +869,8 @@ class HmiServer(ThreadingHTTPServer):
                 "unit_id": device.unit_id,
                 "enabled": device.enabled,
                 "setpoint_register_address": device.setpoint_register_address,
+                "reactive_power_register_address": device.reactive_power_register_address,
+                "cos_phi_register_address": device.cos_phi_register_address,
             }
         return result
 
@@ -754,8 +887,13 @@ class HmiServerHandle:
         self.server.server_close()
 
 
-def create_hmi_server(runtime: SimulationRuntime, config: SimulationConfig, config_path: Path) -> HmiServerHandle | None:
+def create_hmi_server(
+    runtime: SimulationRuntime,
+    config: SimulationConfig,
+    config_path: Path,
+    modbus_manager: ModbusServiceManager | None = None,
+) -> HmiServerHandle | None:
     if not config.hmi.enabled:
         return None
-    server = HmiServer((config.hmi.host, config.hmi.port), runtime, config, config_path)
+    server = HmiServer((config.hmi.host, config.hmi.port), runtime, config, config_path, modbus_manager=modbus_manager)
     return HmiServerHandle(server=server)

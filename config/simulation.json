@@ -12,6 +12,9 @@
   "grid_license_limit_kw": 10000.0,
   "pyranometer_wm2": 1500.0,
   "local_load_kw": 0.0,
+  "reactive_control_mode": 0,
+  "voltage_min_kv": 20.0,
+  "voltage_max_kv": 24.0,
   "simulation_step_seconds": 1.0,
   "modbus": {
     "pv_inverter": {
@@ -19,47 +22,59 @@
       "port": 15001,
       "unit_id": 1,
       "enabled": true,
-      "setpoint_register_address": 2
+      "setpoint_register_address": 0,
+      "reactive_power_register_address": 20,
+      "cos_phi_register_address": 40
     },
     "pcs_inverter": {
       "host": "127.0.0.1",
       "port": 15002,
       "unit_id": 2,
       "enabled": true,
-      "setpoint_register_address": 0
+      "setpoint_register_address": 4,
+      "reactive_power_register_address": 20,
+      "cos_phi_register_address": 40
     },
     "grid_meter": {
       "host": "127.0.0.1",
       "port": 15003,
       "unit_id": 3,
       "enabled": true,
-      "setpoint_register_address": 0
+      "setpoint_register_address": 0,
+      "reactive_power_register_address": 20,
+      "cos_phi_register_address": 40
     },
     "pv_meter": {
       "host": "127.0.0.1",
       "port": 15004,
       "unit_id": 4,
       "enabled": true,
-      "setpoint_register_address": 0
+      "setpoint_register_address": 0,
+      "reactive_power_register_address": 20,
+      "cos_phi_register_address": 40
     },
     "bess_meter": {
       "host": "127.0.0.1",
       "port": 15005,
       "unit_id": 5,
       "enabled": true,
-      "setpoint_register_address": 0
+      "setpoint_register_address": 0,
+      "reactive_power_register_address": 20,
+      "cos_phi_register_address": 40
     },
     "simulation_controller": {
       "host": "127.0.0.1",
       "port": 15010,
       "unit_id": 10,
       "enabled": false,
-      "setpoint_register_address": 0
+      "setpoint_register_address": 0,
+      "reactive_power_register_address": 20,
+      "cos_phi_register_address": 40
     }
   },
   "hmi": {
     "host": "127.0.0.1",
-    "port": 18080,
+    "port": 18081,
     "enabled": true
   }
 }

@@ -32,6 +32,8 @@ class ModbusDeviceConfig:
     unit_id: int = 1
     enabled: bool = True
     setpoint_register_address: int = 0
+    reactive_power_register_address: int = 20
+    cos_phi_register_address: int = 40
 
 
 @dataclass(slots=True)
@@ -60,6 +62,8 @@ def parse_modbus_device(raw: dict, default_port: int, default_unit_id: int) -> M
         unit_id=int(raw.get("unit_id", default_unit_id)),
         enabled=bool(raw.get("enabled", True)),
         setpoint_register_address=max(0, int(raw.get("setpoint_register_address", 0))),
+        reactive_power_register_address=max(0, int(raw.get("reactive_power_register_address", 20))),
+        cos_phi_register_address=max(0, int(raw.get("cos_phi_register_address", 40))),
     )
 
 
@@ -70,6 +74,9 @@ class SimulationConfig:
     grid_license_limit_kw: float
     pyranometer_wm2: float
     local_load_kw: float
+    reactive_control_mode: int = 0
+    voltage_min_kv: float = 20.0
+    voltage_max_kv: float = 24.0
     simulation_step_seconds: float = 1.0
     modbus: ModbusConfig = field(default_factory=ModbusConfig)
     hmi: HmiConfig = field(default_factory=HmiConfig)
@@ -86,6 +93,9 @@ class SimulationConfig:
             grid_license_limit_kw=max(0.0, raw.get("grid_license_limit_kw", 0.0)),
             pyranometer_wm2=clamp(float(raw.get("pyranometer_wm2", 0.0)), 0.0, 1500.0),
             local_load_kw=max(0.0, float(raw.get("local_load_kw", 0.0))),
+            reactive_control_mode=0 if int(raw.get("reactive_control_mode", 0)) == 0 else 1,
+            voltage_min_kv=float(raw.get("voltage_min_kv", 20.0)),
+            voltage_max_kv=float(raw.get("voltage_max_kv", 24.0)),
             simulation_step_seconds=max(0.1, float(raw.get("simulation_step_seconds", 1.0))),
             modbus=ModbusConfig(
                 pv_inverter=parse_modbus_device(modbus_raw.get("pv_inverter", {}), 15001, 1),
@@ -123,6 +133,9 @@ class SimulationConfig:
             "grid_license_limit_kw": self.grid_license_limit_kw,
             "pyranometer_wm2": self.pyranometer_wm2,
             "local_load_kw": self.local_load_kw,
+            "reactive_control_mode": self.reactive_control_mode,
+            "voltage_min_kv": self.voltage_min_kv,
+            "voltage_max_kv": self.voltage_max_kv,
             "simulation_step_seconds": self.simulation_step_seconds,
             "modbus": {
                 "pv_inverter": self._modbus_device_to_dict(self.modbus.pv_inverter),
@@ -152,4 +165,6 @@ class SimulationConfig:
             "unit_id": device.unit_id,
             "enabled": device.enabled,
             "setpoint_register_address": device.setpoint_register_address,
+            "reactive_power_register_address": device.reactive_power_register_address,
+            "cos_phi_register_address": device.cos_phi_register_address,
         }

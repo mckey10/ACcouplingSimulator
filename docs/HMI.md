@@ -10,30 +10,46 @@ Default URL:
 
 - `Operations` page with:
   - live view of PV, BESS, Grid, pyranometer, and local load
+  - live view of reactive power, cos phi, and voltage values
   - one shared graph for PV, BESS, and Grid meters
+  - top-of-screen grouping by device:
+    - `PV Meter`
+    - `BESS Meter`
+    - `Grid Meter`
+    - `Simulation`
   - production-related controls grouped near the live values
 - Runtime update of:
   - `pv_setpoint_pct`
   - `pcs_setpoint_pct`
   - `pv_nominal_power_kw`
   - `pcs_nominal_power_kw`
+  - `pv_reactive_power_setpoint_pct`
+  - `pv_cos_phi_setpoint`
+  - `reactive_control_mode`
   - `pyranometer_wm2`
   - `local_load_kw`
+  - `voltage_min_kv`
+  - `voltage_max_kv`
   - `grid_license_limit_kw`
   - `pv_enabled`
   - `bess_enabled`
 - separate `Modbus Config` page for:
   - Modbus TCP endpoint settings
   - setpoint holding register address for `PV inverter` and `PCS inverter`
+  - reactive power and cos phi register addresses for `PV inverter`
 
-## Important Limitation
+## Modbus Config Behavior
 
-Modbus endpoint changes made from the HMI are saved to the config file, but they do not rebind running TCP servers automatically.
+Modbus endpoint changes made from the HMI are:
 
-After changing Modbus host, port, unit id, enabled status, or setpoint register address:
+1. saved to the config file
+2. applied by restarting the Modbus TCP services inside the running process
 
-1. Save from the HMI
-2. Restart the simulator
+The HMI itself stays up while Modbus services are rebound.
+
+If a newly entered host or port cannot be bound, the request may fail and the user should correct the config and save again.
+
+This means the `Save Modbus Config` button now applies new Modbus endpoint settings without requiring a full manual restart of the simulator process.
 
 ## HTTP Endpoints
 

@@ -11,8 +11,8 @@ import time
 from simulator.config import SimulationConfig
 from simulator.engine import SimulationEngine
 from simulator.hmi import create_hmi_server
-from simulator.modbus import create_modbus_servers
 from simulator.runtime import SimulationRuntime
+from simulator.service_manager import ModbusServiceManager
 
 
 def build_runtime(config_path: Path) -> tuple[SimulationConfig, SimulationRuntime]:
@@ -55,19 +55,17 @@ def run_demo(config_path: Path) -> None:
 def run_server(config_path: Path) -> None:
     config, runtime = build_runtime(config_path)
     runtime.start()
-    servers = create_modbus_servers(runtime, config.modbus)
-    hmi_server = create_hmi_server(runtime, config, config_path)
-    server_threads = [threading.Thread(target=server.start, name=f"{server.name}-modbus", daemon=True) for server in servers]
-    for thread in server_threads:
-        thread.start()
+    modbus_manager = ModbusServiceManager(runtime=runtime, modbus_config=config.modbus)
+    modbus_endpoints = modbus_manager.start()
+    hmi_server = create_hmi_server(runtime, config, config_path, modbus_manager=modbus_manager)
+    server_threads: list[threading.Thread] = []
     if hmi_server is not None:
         server_threads.append(threading.Thread(target=hmi_server.start, name="hmi-server", daemon=True))
         server_threads[-1].start()
 
     print("Simulation runtime started.")
-    for server in servers:
-        host, port = server.server.server_address
-        print(f"- {server.name} listening on {host}:{port} unit_id={server.server.application.unit_id}")
+    for endpoint in modbus_endpoints:
+        print(f"- {endpoint['name']} listening on {endpoint['host']}:{endpoint['port']} unit_id={endpoint['unit_id']}")
     if hmi_server is not None:
         host, port = hmi_server.server.server_address
         print(f"- hmi listening on http://{host}:{port}")
@@ -79,9 +77,8 @@ def run_server(config_path: Path) -> None:
     except KeyboardInterrupt:
         print("Stopping servers...")
     finally:
-        for server in servers:
-            with suppress(Exception):
-                server.stop()
+        with suppress(Exception):
+            modbus_manager.stop()
         if hmi_server is not None:
             with suppress(Exception):
                 hmi_server.stop()

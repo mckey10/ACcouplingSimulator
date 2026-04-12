@@ -108,6 +108,8 @@ def build_register_maps(runtime: SimulationRuntime, modbus_config: ModbusConfig)
 
     pv = maps["pv_inverter"]
     pv_setpoint_address = modbus_config.pv_inverter.setpoint_register_address
+    pv_reactive_address = modbus_config.pv_inverter.reactive_power_register_address
+    pv_cos_phi_address = modbus_config.pv_inverter.cos_phi_register_address
     pv.add_holding(
         pv_setpoint_address,
         2,
@@ -121,10 +123,26 @@ def build_register_maps(runtime: SimulationRuntime, modbus_config: ModbusConfig)
         lambda: [1 if runtime.is_device_enabled("pv") else 0],
         lambda words: runtime.set_device_enabled("pv", bool(words[0])),
     )
+    pv.add_holding(
+        pv_reactive_address,
+        2,
+        lambda: scale_to_words(runtime.get_engine_state()["pv_reactive_power_setpoint_pct"], 100.0),
+        lambda words: runtime.update_inputs(pv_reactive_power_setpoint_pct=words_to_scaled_value(words, 100.0)),
+    )
+    pv.add_holding(
+        pv_cos_phi_address,
+        2,
+        lambda: scale_to_words(runtime.get_engine_state()["pv_cos_phi_setpoint"], 1000.0),
+        lambda words: runtime.update_inputs(pv_cos_phi_setpoint=words_to_scaled_value(words, 1000.0)),
+    )
     pv.add_input(0, 2, lambda: scale_to_words(runtime.get_engine_state()["pv_actual_power_kw"]))
     pv.add_input(2, 2, lambda: scale_to_words(runtime.get_engine_state()["pv_available_power_kw"]))
     pv.add_input(4, 2, lambda: scale_to_words(runtime.get_engine_state()["pv_target_power_kw"]))
-    pv.add_input(6, 1, lambda: [1 if runtime.is_device_enabled("pv") else 0])
+    pv.add_input(6, 2, lambda: scale_to_words(runtime.get_engine_state()["pv_actual_reactive_power_kvar"]))
+    pv.add_input(8, 2, lambda: scale_to_words(runtime.get_engine_state()["pv_cos_phi"], 1000.0))
+    pv.add_input(10, 2, lambda: scale_to_words(runtime.get_engine_state()["pv_voltage_kv"], 100.0))
+    pv.add_input(12, 1, lambda: [runtime.get_engine_state()["reactive_control_mode"]])
+    pv.add_input(13, 1, lambda: [1 if runtime.is_device_enabled("pv") else 0])
 
     pcs = maps["pcs_inverter"]
     pcs_setpoint_address = modbus_config.pcs_inverter.setpoint_register_address
@@ -143,27 +161,45 @@ def build_register_maps(runtime: SimulationRuntime, modbus_config: ModbusConfig)
     )
     pcs.add_input(0, 2, lambda: scale_to_words(runtime.get_engine_state()["bess_actual_power_kw"]))
     pcs.add_input(2, 2, lambda: scale_to_words(runtime.get_engine_state()["bess_target_power_kw"]))
-    pcs.add_input(4, 1, lambda: [1 if runtime.is_device_enabled("bess") else 0])
+    pcs.add_input(4, 2, lambda: scale_to_words(runtime.get_engine_state()["bess_reactive_power_kvar"]))
+    pcs.add_input(6, 2, lambda: scale_to_words(runtime.get_engine_state()["bess_cos_phi"], 1000.0))
+    pcs.add_input(8, 2, lambda: scale_to_words(runtime.get_engine_state()["bess_voltage_kv"], 100.0))
+    pcs.add_input(10, 1, lambda: [1 if runtime.is_device_enabled("bess") else 0])
 
     grid = maps["grid_meter"]
     grid.add_holding(0, 2, lambda: scale_to_words(runtime.get_engine_state()["grid_license_limit_kw"]), lambda words: runtime.set_grid_license_limit_kw(words_to_scaled_value(words)))
     grid.add_input(0, 2, lambda: scale_to_words(runtime.get_engine_state()["grid_active_power_kw"]))
-    grid.add_input(2, 2, lambda: scale_to_words(runtime.get_engine_state()["grid_license_limit_kw"]))
-    grid.add_input(4, 1, lambda: [1 if runtime.get_engine_state()["grid_limit_exceeded"] else 0])
-    grid.add_input(5, 1, lambda: [0 if runtime.get_engine_state()["grid_direction"] == "idle" else 1 if runtime.get_engine_state()["grid_direction"] == "export" else 2])
+    grid.add_input(2, 2, lambda: scale_to_words(runtime.get_engine_state()["grid_reactive_power_kvar"]))
+    grid.add_input(4, 2, lambda: scale_to_words(runtime.get_engine_state()["grid_cos_phi"], 1000.0))
+    grid.add_input(6, 2, lambda: scale_to_words(runtime.get_engine_state()["grid_voltage_kv"], 100.0))
+    grid.add_input(8, 2, lambda: scale_to_words(runtime.get_engine_state()["grid_license_limit_kw"]))
+    grid.add_input(10, 1, lambda: [1 if runtime.get_engine_state()["grid_limit_exceeded"] else 0])
+    grid.add_input(11, 1, lambda: [0 if runtime.get_engine_state()["grid_direction"] == "idle" else 1 if runtime.get_engine_state()["grid_direction"] == "export" else 2])
 
     pv_meter = maps["pv_meter"]
     pv_meter.add_input(0, 2, lambda: scale_to_words(runtime.get_engine_state()["pv_actual_power_kw"]))
+    pv_meter.add_input(2, 2, lambda: scale_to_words(runtime.get_engine_state()["pv_actual_reactive_power_kvar"]))
+    pv_meter.add_input(4, 2, lambda: scale_to_words(runtime.get_engine_state()["pv_cos_phi"], 1000.0))
+    pv_meter.add_input(6, 2, lambda: scale_to_words(runtime.get_engine_state()["pv_voltage_kv"], 100.0))
 
     bess_meter = maps["bess_meter"]
     bess_meter.add_input(0, 2, lambda: scale_to_words(runtime.get_engine_state()["bess_actual_power_kw"]))
+    bess_meter.add_input(2, 2, lambda: scale_to_words(runtime.get_engine_state()["bess_reactive_power_kvar"]))
+    bess_meter.add_input(4, 2, lambda: scale_to_words(runtime.get_engine_state()["bess_cos_phi"], 1000.0))
+    bess_meter.add_input(6, 2, lambda: scale_to_words(runtime.get_engine_state()["bess_voltage_kv"], 100.0))
 
     controller = maps["simulation_controller"]
     controller.add_holding(0, 2, lambda: scale_to_words(runtime.get_engine_state()["pyranometer_wm2"], 1.0), lambda words: runtime.update_inputs(pyranometer_wm2=words_to_scaled_value(words, 1.0)))
     controller.add_holding(2, 2, lambda: scale_to_words(runtime.get_engine_state()["local_load_kw"]), lambda words: runtime.update_inputs(local_load_kw=words_to_scaled_value(words)))
+    controller.add_holding(4, 1, lambda: [runtime.get_engine_state()["reactive_control_mode"]], lambda words: runtime.update_inputs(reactive_control_mode=words[0]))
+    controller.add_holding(5, 2, lambda: scale_to_words(runtime.get_engine_state()["voltage_min_kv"], 100.0), lambda words: runtime.update_inputs(voltage_min_kv=words_to_scaled_value(words, 100.0)))
+    controller.add_holding(7, 2, lambda: scale_to_words(runtime.get_engine_state()["voltage_max_kv"], 100.0), lambda words: runtime.update_inputs(voltage_max_kv=words_to_scaled_value(words, 100.0)))
     controller.add_input(0, 2, lambda: scale_to_words(runtime.get_engine_state()["pyranometer_wm2"], 1.0))
     controller.add_input(2, 2, lambda: scale_to_words(runtime.get_engine_state()["local_load_kw"]))
-    controller.add_input(4, 1, lambda: [1])
+    controller.add_input(4, 1, lambda: [runtime.get_engine_state()["reactive_control_mode"]])
+    controller.add_input(5, 2, lambda: scale_to_words(runtime.get_engine_state()["voltage_min_kv"], 100.0))
+    controller.add_input(7, 2, lambda: scale_to_words(runtime.get_engine_state()["voltage_max_kv"], 100.0))
+    controller.add_input(9, 1, lambda: [1])
 
     return maps
 

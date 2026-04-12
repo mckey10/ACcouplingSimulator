@@ -31,6 +31,13 @@ The simulator is intended to behave like a real-time test bench for an external 
 - Negative setpoints are not allowed.
 - Actual PV power is limited both by the setpoint and by solar availability from the pyranometer.
 - PV nominal power is currently editable at runtime from the HMI.
+- Supports reactive control in one active mode at a time:
+  - reactive power mode
+  - cos phi mode
+- Reactive setpoint range: `-100..100%` of PV nominal power
+- Cos phi setpoint range: `-1..1`
+- If reactive control mode is `0`, reactive power setpoint has priority.
+- If reactive control mode is `1`, cos phi setpoint is used to derive reactive power.
 
 ### PCS / BESS Inverter
 
@@ -47,14 +54,19 @@ The simulator is intended to behave like a real-time test bench for an external 
 - Positive value means export to grid.
 - Negative value means import from grid.
 - The grid license limit is displayed for visibility only.
+- Also shows reactive power, cos phi, and voltage.
 
 ### PV Meter
 
 - Shows instantaneous active power produced by the PV inverter.
+- Also shows reactive power, cos phi, and voltage.
 
 ### BESS Meter
 
 - Shows instantaneous active power of the PCS / BESS inverter.
+- Reactive power is currently fixed at `0`.
+- Voltage is currently fixed at the base voltage.
+- Cos phi is currently fixed at `1.0`.
 
 ### Local Load
 
@@ -71,11 +83,22 @@ The current HMI can change these values at runtime:
 - `PCS setpoint`
 - `PV nominal power`
 - `PCS nominal power`
+- `PV reactive power setpoint`
+- `PV cos phi setpoint`
+- `reactive control mode`
 - `pyranometer`
 - `local load`
 - `grid license limit`
+- `voltage min`
+- `voltage max`
 - `PV enabled`
 - `BESS enabled`
+
+The current HMI layout is organized for live observation:
+
+- grouped live summaries for `PV Meter`, `BESS Meter`, `Grid Meter`, and `Simulation`
+- shared trend graph for `PV`, `BESS`, and `Grid`
+- a separate Modbus configuration page
 
 ## Units
 
@@ -111,6 +134,8 @@ P_pv_available = PV_nominal * pyranometer / 1500
 - `Grid power > 0`: export to grid
 - `Grid power < 0`: import from grid
 - `Load power >= 0`: local consumption
+- `Q > 0`: lowers voltage
+- `Q < 0`: raises voltage
 
 ## Core Equations
 
@@ -138,16 +163,65 @@ BESS actual power:
 P_bess_actual = BESS_nominal * PCS_setpoint / 100
 ```
 
+PV reactive power in reactive power mode:
+
+```text
+Q_pv_target = PV_nominal * Q_setpoint_pct / 100
+```
+
+PV reactive power in cos phi mode:
+
+```text
+Q_pv_target = sign(cos_phi) * sqrt((P_pv_actual / abs(cos_phi_limited))^2 - P_pv_actual^2)
+```
+
+Where:
+
+- `abs(cos_phi_limited) >= 0.01`
+- `cos_phi > 0 -> Q > 0`
+- `cos_phi < 0 -> Q < 0`
+
 Grid power:
 
 ```text
 P_grid = P_pv_actual + P_bess_actual - P_load
 ```
 
+Grid reactive power:
+
+```text
+Q_grid = Q_pv + Q_bess
+```
+
+At the current stage:
+
+- `Q_bess = 0`
+
 Interpretation:
 
 - `P_grid > 0` means export to grid
 - `P_grid < 0` means import from grid
+
+## Cos Phi Rules
+
+- Cos phi sign follows reactive power sign
+- If `P = 0`, cos phi is reported as `1.0`
+- If `Q = 0`, cos phi is reported as `1.0`
+
+## Voltage Rules
+
+- Voltage is modeled linearly
+- Default range is `20..24 kV`
+- `V_base = (V_min + V_max) / 2`
+- `Q = -100% -> V = V_max`
+- `Q = 0 -> V = V_base`
+- `Q = +100% -> V = V_min`
+
+At the current stage:
+
+- `V_pv` depends on `Q_pv`
+- `V_bess = V_base`
+- `V_grid` depends on `Q_grid`
 
 ## Example Scenarios
 
@@ -238,6 +312,7 @@ Planned logical devices:
 6. `Simulation controller`
 
 The simulation controller is not a physical device. It exists to expose simulation inputs such as pyranometer and local load.
+It also exposes shared simulation settings such as reactive control mode and voltage limits.
 
 ## Planned Modbus Variables
 

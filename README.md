@@ -16,6 +16,7 @@ The first implementation stage now includes:
 - configuration loading in `simulator/config.py`
 - core data models in `simulator/models.py`
 - a minimal Modbus TCP layer in `simulator/modbus.py`
+- a Modbus lifecycle manager in `simulator/service_manager.py`
 - a minimal web HMI in `simulator/hmi.py`
 - a thread-safe runtime wrapper in `simulator/runtime.py`
 - a sample configuration file in `config/simulation.json`
@@ -24,12 +25,15 @@ The first implementation stage now includes:
 The current implementation already supports:
 
 - real-time simulation of PV, PCS / BESS, Grid, and local load
+- reactive power, cos phi, and voltage behavior for PV and meters
 - Modbus TCP endpoints for logical devices
 - a web HMI with:
   - operations dashboard
+  - top summary grouped by PV, BESS, Grid, and Simulation
   - live graph for PV, BESS, and Grid
-  - runtime editing of setpoints, nominal powers, pyranometer, load, and enable states
+  - runtime editing of active/reactive setpoints, nominal powers, voltage limits, pyranometer, load, and enable states
   - a separate Modbus configuration page
+  - automatic Modbus service restart after `Save Modbus Config`
 
 ## Run
 
