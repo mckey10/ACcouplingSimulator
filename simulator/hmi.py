@@ -22,14 +22,10 @@ HTML_PAGE = """<!doctype html>
   <title>AC Coupling Simulator</title>
   <style>
     :root {
-      --bg: #f3efe6;
-      --card: #fffdf8;
+      --card: rgba(255, 251, 243, 0.95);
       --ink: #1e2430;
       --accent: #b6532f;
-      --accent-soft: #e5b59d;
       --line: #d6c8b8;
-      --good: #2f7d4a;
-      --bad: #a83e2e;
       --mono: "Consolas", "SFMono-Regular", monospace;
       --sans: "Segoe UI", "Trebuchet MS", sans-serif;
     }
@@ -38,37 +34,48 @@ HTML_PAGE = """<!doctype html>
       margin: 0;
       font-family: var(--sans);
       color: var(--ink);
-      background:
-        radial-gradient(circle at top left, #fff7ea 0, #f3efe6 35%, #ebe4d6 100%);
+      background: radial-gradient(circle at top left, #fff7ea 0, #f2ecdf 30%, #e7ddcc 100%);
       min-height: 100vh;
     }
     main {
-      max-width: 1200px;
+      max-width: 1400px;
       margin: 0 auto;
-      padding: 24px;
+      padding: 20px;
     }
-    h1, h2 { margin: 0 0 12px; }
+    h1, h2, h3 { margin: 0 0 12px; }
     p { margin: 0 0 10px; }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 16px;
-      margin-top: 16px;
-    }
-    .card {
+    .hero, .card {
       background: var(--card);
       border: 1px solid var(--line);
-      border-radius: 18px;
-      padding: 18px;
+      border-radius: 20px;
       box-shadow: 0 14px 32px rgba(54, 44, 28, 0.08);
     }
     .hero {
+      padding: 24px;
       display: grid;
       gap: 14px;
-      padding: 24px;
-      border-radius: 24px;
-      background: linear-gradient(135deg, rgba(255,245,228,0.95), rgba(255,255,255,0.8));
-      border: 1px solid var(--line);
+    }
+    .nav {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+    .nav a {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      text-decoration: none;
+      color: var(--ink);
+      border: 1px solid #d6c8b8;
+      background: rgba(255,255,255,0.72);
+      font-size: 0.92rem;
+    }
+    .nav a.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
     }
     .metrics {
       display: grid;
@@ -87,8 +94,58 @@ HTML_PAGE = """<!doctype html>
       font-size: 1.3rem;
       margin-top: 6px;
     }
+    .dashboard {
+      display: grid;
+      grid-template-columns: minmax(480px, 1.45fr) minmax(360px, 0.95fr);
+      gap: 18px;
+      margin-top: 18px;
+      align-items: start;
+    }
+    .stack {
+      display: grid;
+      gap: 18px;
+    }
+    .card {
+      padding: 18px;
+      min-width: 0;
+    }
+    .chart-wrap {
+      border-radius: 16px;
+      border: 1px solid #ddcdbb;
+      background: linear-gradient(180deg, #fffdf8, #f6efe4);
+      padding: 12px;
+      overflow: hidden;
+    }
+    .chart-meta {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+      font-size: 0.9rem;
+    }
+    .legend {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .legend-swatch {
+      width: 14px;
+      height: 3px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+    .chart-svg {
+      width: 100%;
+      height: 300px;
+      display: block;
+    }
     form {
       display: grid;
+      gap: 10px;
+    }
+    .production-grid, .pill-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
     }
     label {
@@ -110,24 +167,46 @@ HTML_PAGE = """<!doctype html>
       cursor: pointer;
       font-weight: 600;
     }
-    button.secondary {
-      background: #6c7d87;
+    .kpi {
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid #e2d4c5;
+      background: #f9f4ec;
     }
-    .status-good { color: var(--good); }
-    .status-bad { color: var(--bad); }
-    .mono { font-family: var(--mono); }
+    .kpi span {
+      display: block;
+      font-size: 0.84rem;
+      color: #635748;
+    }
+    .kpi strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 1.15rem;
+    }
+    .json-view {
+      max-height: 420px;
+      overflow: auto;
+      margin: 0;
+      padding: 14px;
+      border-radius: 14px;
+      background: #201d1a;
+      color: #efe7dc;
+      font-family: var(--mono);
+      font-size: 0.86rem;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
     .note {
       font-size: 0.88rem;
       color: #5a6470;
     }
-    .two {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
+    @media (max-width: 1100px) {
+      .dashboard { grid-template-columns: 1fr; }
     }
     @media (max-width: 640px) {
-      .two { grid-template-columns: 1fr; }
       main { padding: 14px; }
+      .production-grid, .pill-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -136,8 +215,11 @@ HTML_PAGE = """<!doctype html>
   <section class="hero">
     <div>
       <h1>AC Coupling Simulator</h1>
-      <p>Live monitor and control surface for PV, PCS/BESS, Grid and simulation inputs.</p>
-      <p class="note">Modbus endpoint edits are saved into the JSON config and require a restart to take effect.</p>
+      <p>Operational view for live production, battery response, and grid behavior.</p>
+      <div class="nav">
+        <a class="active" href="/">Operations</a>
+        <a href="/modbus">Modbus Config</a>
+      </div>
     </div>
     <div class="metrics">
       <div class="metric"><span>PV Power</span><strong id="pv-power">0.0 kW</strong></div>
@@ -148,56 +230,83 @@ HTML_PAGE = """<!doctype html>
       <div class="metric"><span>Local Load</span><strong id="local-load">0.0 kW</strong></div>
     </div>
   </section>
-  <section class="grid">
-    <article class="card">
-      <h2>Live Controls</h2>
-      <form id="controls-form">
-        <div class="two">
-          <label>PV Setpoint %
-            <input type="number" step="0.1" name="pv_setpoint_pct">
-          </label>
-          <label>PCS Setpoint %
-            <input type="number" step="0.1" name="pcs_setpoint_pct">
-          </label>
+
+  <section class="dashboard">
+    <div class="stack">
+      <article class="card">
+        <h2>Meter Trends</h2>
+        <p class="note">PV, BESS, and Grid meters are drawn on one common vertical scale.</p>
+        <div class="chart-wrap">
+          <div class="chart-meta">
+            <span class="legend"><span class="legend-swatch" style="background:#d06a37"></span>PV meter</span>
+            <span class="legend"><span class="legend-swatch" style="background:#2f7d4a"></span>BESS meter</span>
+            <span class="legend"><span class="legend-swatch" style="background:#385f8a"></span>Grid meter</span>
+            <span id="chart-range" class="note"></span>
+          </div>
+          <svg id="power-chart" class="chart-svg" viewBox="0 0 960 300" preserveAspectRatio="none"></svg>
         </div>
-        <div class="two">
-          <label>Pyranometer W/m2
-            <input type="number" step="1" name="pyranometer_wm2">
+      </article>
+
+      <article class="card">
+        <h2>Runtime Summary</h2>
+        <p class="note">Current in-memory state from the simulation engine.</p>
+        <pre id="state-json" class="json-view"></pre>
+      </article>
+    </div>
+
+    <div class="stack">
+      <article class="card">
+        <h2>Production Controls</h2>
+        <form id="controls-form">
+          <div class="production-grid">
+            <label>PV Setpoint %
+              <input type="number" step="0.1" name="pv_setpoint_pct">
+            </label>
+            <label>PCS Setpoint %
+              <input type="number" step="0.1" name="pcs_setpoint_pct">
+            </label>
+            <label>PV Nominal kW
+              <input type="number" step="0.1" name="pv_nominal_power_kw">
+            </label>
+            <label>PCS Nominal kW
+              <input type="number" step="0.1" name="pcs_nominal_power_kw">
+            </label>
+            <label>Pyranometer W/m2
+              <input type="number" step="1" name="pyranometer_wm2">
+            </label>
+            <label>Local Load kW
+              <input type="number" step="0.1" name="local_load_kw">
+            </label>
+            <label>Grid License kW
+              <input type="number" step="0.1" name="grid_license_limit_kw">
+            </label>
+            <label>PV Enabled
+              <select name="pv_enabled"><option value="true">true</option><option value="false">false</option></select>
+            </label>
+          </div>
+          <label>BESS Enabled
+            <select name="bess_enabled"><option value="true">true</option><option value="false">false</option></select>
           </label>
-          <label>Local Load kW
-            <input type="number" step="0.1" name="local_load_kw">
-          </label>
+          <button type="submit">Apply Runtime Changes</button>
+        </form>
+        <p id="controls-status" class="note"></p>
+      </article>
+
+      <article class="card">
+        <h2>Production Snapshot</h2>
+        <div class="pill-grid">
+          <div class="kpi"><span>PV Setpoint</span><strong id="pv-setpoint-view">0.0 %</strong></div>
+          <div class="kpi"><span>PCS Setpoint</span><strong id="pcs-setpoint-view">0.0 %</strong></div>
+          <div class="kpi"><span>PV Available</span><strong id="pv-available-view">0.0 kW</strong></div>
+          <div class="kpi"><span>Grid License</span><strong id="grid-license-view">0.0 kW</strong></div>
+          <div class="kpi"><span>PV Nominal</span><strong id="pv-nominal-view">0.0 kW</strong></div>
+          <div class="kpi"><span>PCS Nominal</span><strong id="pcs-nominal-view">0.0 kW</strong></div>
         </div>
-        <div class="two">
-          <label>Grid License kW
-            <input type="number" step="0.1" name="grid_license_limit_kw">
-          </label>
-          <label>PV Enabled
-            <select name="pv_enabled"><option value="true">true</option><option value="false">false</option></select>
-          </label>
-        </div>
-        <label>BESS Enabled
-          <select name="bess_enabled"><option value="true">true</option><option value="false">false</option></select>
-        </label>
-        <button type="submit">Apply Runtime Changes</button>
-      </form>
-      <p id="controls-status" class="note"></p>
-    </article>
-    <article class="card">
-      <h2>Modbus Endpoints</h2>
-      <form id="modbus-form"></form>
-      <button id="save-modbus" class="secondary">Save Modbus Config</button>
-      <p id="modbus-status" class="note"></p>
-    </article>
-    <article class="card">
-      <h2>Live State</h2>
-      <pre id="state-json" class="mono"></pre>
-    </article>
+      </article>
+    </div>
   </section>
 </main>
 <script>
-  const deviceKeys = ["pv_inverter", "pcs_inverter", "grid_meter", "pv_meter", "bess_meter", "simulation_controller"];
-
   function setText(id, value) {
     document.getElementById(id).textContent = value;
   }
@@ -206,6 +315,8 @@ HTML_PAGE = """<!doctype html>
     const form = document.getElementById("controls-form");
     form.pv_setpoint_pct.value = state.pv_setpoint_pct;
     form.pcs_setpoint_pct.value = state.pcs_setpoint_pct;
+    form.pv_nominal_power_kw.value = state.pv_nominal_power_kw;
+    form.pcs_nominal_power_kw.value = state.pcs_nominal_power_kw;
     form.pyranometer_wm2.value = state.pyranometer_wm2;
     form.local_load_kw.value = state.local_load_kw;
     form.grid_license_limit_kw.value = state.grid_license_limit_kw;
@@ -213,31 +324,59 @@ HTML_PAGE = """<!doctype html>
     form.bess_enabled.value = String(state.bess_enabled);
   }
 
-  function renderModbus(modbus) {
-    const form = document.getElementById("modbus-form");
-    form.innerHTML = "";
-    for (const key of deviceKeys) {
-      const cfg = modbus[key];
-      const block = document.createElement("div");
-      block.className = "card";
-      block.style.padding = "12px";
-      block.innerHTML = `
-        <h3 style="margin:0 0 10px">${key}</h3>
-        <div class="two">
-          <label>Host<input name="${key}.host" value="${cfg.host}"></label>
-          <label>Port<input name="${key}.port" type="number" value="${cfg.port}"></label>
-        </div>
-        <div class="two">
-          <label>Unit ID<input name="${key}.unit_id" type="number" value="${cfg.unit_id}"></label>
-          <label>Enabled
-            <select name="${key}.enabled">
-              <option value="true" ${cfg.enabled ? "selected" : ""}>true</option>
-              <option value="false" ${!cfg.enabled ? "selected" : ""}>false</option>
-            </select>
-          </label>
-        </div>`;
-      form.appendChild(block);
+  function renderChart(history) {
+    const svg = document.getElementById("power-chart");
+    const rangeLabel = document.getElementById("chart-range");
+    const width = 960;
+    const height = 300;
+    const left = 54;
+    const right = 18;
+    const top = 14;
+    const bottom = 28;
+    const plotWidth = width - left - right;
+    const plotHeight = height - top - bottom;
+    const values = history.flatMap((point) => [point.pv_power_kw, point.bess_power_kw, point.grid_power_kw]);
+    const amplitude = Math.max(1, ...values.map((value) => Math.abs(value)));
+    const padded = amplitude * 1.15;
+    const minY = -padded;
+    const maxY = padded;
+    const ticks = [-padded, -padded / 2, 0, padded / 2, padded];
+
+    function yScale(value) {
+      return top + ((maxY - value) / (maxY - minY)) * plotHeight;
     }
+
+    function xScale(index) {
+      if (history.length <= 1) {
+        return left;
+      }
+      return left + (index / (history.length - 1)) * plotWidth;
+    }
+
+    function buildPath(field) {
+      return history.map((point, index) => `${index === 0 ? "M" : "L"} ${xScale(index).toFixed(2)} ${yScale(point[field]).toFixed(2)}`).join(" ");
+    }
+
+    const gridLines = ticks.map((tick) => {
+      const y = yScale(tick);
+      return `<line x1="${left}" y1="${y}" x2="${width - right}" y2="${y}" stroke="${tick === 0 ? "#8c7a67" : "#d9cebe"}" stroke-width="${tick === 0 ? 1.6 : 1}" stroke-dasharray="${tick === 0 ? "" : "4 5"}" />
+              <text x="${left - 10}" y="${y + 4}" text-anchor="end" font-size="12" fill="#66594c">${tick.toFixed(0)}</text>`;
+    }).join("");
+
+    const paths = [
+      { field: "pv_power_kw", color: "#d06a37" },
+      { field: "bess_power_kw", color: "#2f7d4a" },
+      { field: "grid_power_kw", color: "#385f8a" }
+    ].map((series) => `<path d="${buildPath(series.field)}" fill="none" stroke="${series.color}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />`).join("");
+
+    svg.innerHTML = `
+      <rect x="0" y="0" width="${width}" height="${height}" fill="transparent"></rect>
+      ${gridLines}
+      <line x1="${left}" y1="${top}" x2="${left}" y2="${height - bottom}" stroke="#988673" stroke-width="1.2" />
+      <line x1="${left}" y1="${height - bottom}" x2="${width - right}" y2="${height - bottom}" stroke="#988673" stroke-width="1.2" />
+      ${paths}
+    `;
+    rangeLabel.textContent = `Range: ${(-padded).toFixed(0)} to ${padded.toFixed(0)} kW`;
   }
 
   async function refreshState(initial = false) {
@@ -250,10 +389,16 @@ HTML_PAGE = """<!doctype html>
     setText("grid-direction", state.grid_direction);
     setText("pyranometer", `${state.pyranometer_wm2.toFixed(0)} W/m2`);
     setText("local-load", `${state.local_load_kw.toFixed(1)} kW`);
+    setText("pv-setpoint-view", `${state.pv_setpoint_pct.toFixed(1)} %`);
+    setText("pcs-setpoint-view", `${state.pcs_setpoint_pct.toFixed(1)} %`);
+    setText("pv-available-view", `${state.pv_available_power_kw.toFixed(1)} kW`);
+    setText("grid-license-view", `${state.grid_license_limit_kw.toFixed(1)} kW`);
+    setText("pv-nominal-view", `${state.pv_nominal_power_kw.toFixed(1)} kW`);
+    setText("pcs-nominal-view", `${state.pcs_nominal_power_kw.toFixed(1)} kW`);
     document.getElementById("state-json").textContent = JSON.stringify(payload, null, 2);
+    renderChart(payload.history);
     if (initial) {
       fillControls(state);
-      renderModbus(payload.modbus);
     }
   }
 
@@ -263,6 +408,8 @@ HTML_PAGE = """<!doctype html>
     const payload = {
       pv_setpoint_pct: Number(form.pv_setpoint_pct.value),
       pcs_setpoint_pct: Number(form.pcs_setpoint_pct.value),
+      pv_nominal_power_kw: Number(form.pv_nominal_power_kw.value),
+      pcs_nominal_power_kw: Number(form.pcs_nominal_power_kw.value),
       pyranometer_wm2: Number(form.pyranometer_wm2.value),
       local_load_kw: Number(form.local_load_kw.value),
       grid_license_limit_kw: Number(form.grid_license_limit_kw.value),
@@ -278,6 +425,174 @@ HTML_PAGE = """<!doctype html>
     document.getElementById("controls-status").textContent = result.message;
     await refreshState();
   });
+
+  refreshState(true);
+  setInterval(() => refreshState(false), 1000);
+</script>
+</body>
+</html>
+"""
+
+
+MODBUS_PAGE = """<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AC Coupling Simulator - Modbus</title>
+  <style>
+    :root {
+      --card: rgba(255, 251, 243, 0.95);
+      --ink: #1e2430;
+      --accent: #b6532f;
+      --line: #d6c8b8;
+      --sans: "Segoe UI", "Trebuchet MS", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      color: var(--ink);
+      background: radial-gradient(circle at top left, #fff7ea 0, #f2ecdf 30%, #e7ddcc 100%);
+      min-height: 100vh;
+    }
+    main {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 14px 32px rgba(54, 44, 28, 0.08);
+      margin-top: 16px;
+    }
+    .nav {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .nav a {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      text-decoration: none;
+      color: var(--ink);
+      border: 1px solid #d6c8b8;
+      background: rgba(255,255,255,0.72);
+      font-size: 0.92rem;
+    }
+    .nav a.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .devices {
+      display: grid;
+      gap: 12px;
+    }
+    .device {
+      border: 1px solid #e1d4c5;
+      border-radius: 14px;
+      padding: 14px;
+      background: #f9f4ec;
+    }
+    .two {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    label {
+      display: grid;
+      gap: 4px;
+      font-size: 0.92rem;
+    }
+    input, select, button {
+      font: inherit;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #c9b6a3;
+      background: white;
+    }
+    button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      margin-top: 14px;
+    }
+    .note {
+      font-size: 0.9rem;
+      color: #5f635c;
+    }
+    @media (max-width: 640px) {
+      .two { grid-template-columns: 1fr; }
+      main { padding: 14px; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <section class="card">
+    <h1>Modbus Configuration</h1>
+    <p class="note">Edit endpoint settings here. Saved changes apply after simulator restart.</p>
+    <div class="nav">
+      <a href="/">Operations</a>
+      <a class="active" href="/modbus">Modbus Config</a>
+    </div>
+  </section>
+  <section class="card">
+    <form id="modbus-form" class="devices"></form>
+    <button id="save-modbus" type="button">Save Modbus Config</button>
+    <p id="modbus-status" class="note"></p>
+  </section>
+</main>
+<script>
+  const deviceKeys = ["pv_inverter", "pcs_inverter", "grid_meter", "pv_meter", "bess_meter", "simulation_controller"];
+  const setpointRegisterDevices = new Set(["pv_inverter", "pcs_inverter"]);
+
+  function renderModbus(modbus) {
+    const form = document.getElementById("modbus-form");
+    form.innerHTML = "";
+    for (const key of deviceKeys) {
+      const cfg = modbus[key];
+      const block = document.createElement("div");
+      block.className = "device";
+      const setpointRow = setpointRegisterDevices.has(key)
+        ? `<label>Setpoint Holding Register
+             <input name="${key}.setpoint_register_address" type="number" min="0" value="${cfg.setpoint_register_address ?? 0}">
+           </label>`
+        : "";
+      block.innerHTML = `
+        <h3>${key}</h3>
+        <div class="two">
+          <label>Host<input name="${key}.host" value="${cfg.host}"></label>
+          <label>Port<input name="${key}.port" type="number" value="${cfg.port}"></label>
+        </div>
+        <div class="two">
+          <label>Unit ID<input name="${key}.unit_id" type="number" value="${cfg.unit_id}"></label>
+          <label>Enabled
+            <select name="${key}.enabled">
+              <option value="true" ${cfg.enabled ? "selected" : ""}>true</option>
+              <option value="false" ${!cfg.enabled ? "selected" : ""}>false</option>
+            </select>
+          </label>
+        </div>
+        ${setpointRow}`;
+      form.appendChild(block);
+    }
+  }
+
+  async function refreshConfig() {
+    const response = await fetch("/api/state");
+    const payload = await response.json();
+    renderModbus(payload.modbus);
+  }
 
   document.getElementById("save-modbus").addEventListener("click", async () => {
     const inputs = document.querySelectorAll("#modbus-form input, #modbus-form select");
@@ -296,11 +611,10 @@ HTML_PAGE = """<!doctype html>
     });
     const result = await response.json();
     document.getElementById("modbus-status").textContent = result.message;
-    await refreshState();
+    await refreshConfig();
   });
 
-  refreshState(true);
-  setInterval(() => refreshState(false), 1000);
+  refreshConfig();
 </script>
 </body>
 </html>
@@ -314,6 +628,9 @@ class HmiRequestHandler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path
         if path == "/":
             self._send_html(HTML_PAGE)
+            return
+        if path == "/modbus":
+            self._send_html(MODBUS_PAGE)
             return
         if path == "/api/state":
             self._send_json(self.server.build_state_payload())
@@ -371,6 +688,7 @@ class HmiServer(ThreadingHTTPServer):
         return {
             "state": state,
             "modbus": self._modbus_snapshot(),
+            "history": self.runtime.get_history(),
         }
 
     def apply_runtime_update(self, payload: dict) -> None:
@@ -380,6 +698,10 @@ class HmiServer(ThreadingHTTPServer):
             pyranometer_wm2=float(payload.get("pyranometer_wm2", self.runtime.get_engine_state()["pyranometer_wm2"])),
             local_load_kw=float(payload.get("local_load_kw", self.runtime.get_engine_state()["local_load_kw"])),
         )
+        if "pv_nominal_power_kw" in payload:
+            self.runtime.set_nominal_power_kw("pv", float(payload["pv_nominal_power_kw"]))
+        if "pcs_nominal_power_kw" in payload:
+            self.runtime.set_nominal_power_kw("bess", float(payload["pcs_nominal_power_kw"]))
         self.runtime.set_grid_license_limit_kw(float(payload.get("grid_license_limit_kw", self.runtime.get_engine_state()["grid_license_limit_kw"])))
         if "pv_enabled" in payload:
             self.runtime.set_device_enabled("pv", bool(payload["pv_enabled"]))
@@ -395,6 +717,8 @@ class HmiServer(ThreadingHTTPServer):
             device.port = int(values.get("port", device.port))
             device.unit_id = int(values.get("unit_id", device.unit_id))
             device.enabled = bool(values.get("enabled", device.enabled))
+            if "setpoint_register_address" in values:
+                device.setpoint_register_address = max(0, int(values["setpoint_register_address"]))
         self.config.save(self.config_path)
 
     def _modbus_snapshot(self) -> dict:
@@ -413,6 +737,7 @@ class HmiServer(ThreadingHTTPServer):
                 "port": device.port,
                 "unit_id": device.unit_id,
                 "enabled": device.enabled,
+                "setpoint_register_address": device.setpoint_register_address,
             }
         return result
 

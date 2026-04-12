@@ -96,7 +96,7 @@ class DeviceRegisterMap:
             offset += entry.width
 
 
-def build_register_maps(runtime: SimulationRuntime) -> dict[str, DeviceRegisterMap]:
+def build_register_maps(runtime: SimulationRuntime, modbus_config: ModbusConfig) -> dict[str, DeviceRegisterMap]:
     maps = {
         "pv_inverter": DeviceRegisterMap(),
         "pcs_inverter": DeviceRegisterMap(),
@@ -107,18 +107,40 @@ def build_register_maps(runtime: SimulationRuntime) -> dict[str, DeviceRegisterM
     }
 
     pv = maps["pv_inverter"]
-    pv.add_holding(0, 2, lambda: scale_to_words(runtime.get_engine_state()["pv_setpoint_pct"], 100.0), lambda words: runtime.update_inputs(pv_setpoint_pct=words_to_scaled_value(words, 100.0)))
-    pv.add_holding(2, 2, lambda: scale_to_words(runtime.get_engine_state()["pv_nominal_power_kw"]))
-    pv.add_holding(4, 1, lambda: [1 if runtime.is_device_enabled("pv") else 0], lambda words: runtime.set_device_enabled("pv", bool(words[0])))
+    pv_setpoint_address = modbus_config.pv_inverter.setpoint_register_address
+    pv.add_holding(
+        pv_setpoint_address,
+        2,
+        lambda: scale_to_words(runtime.get_engine_state()["pv_setpoint_pct"], 100.0),
+        lambda words: runtime.update_inputs(pv_setpoint_pct=words_to_scaled_value(words, 100.0)),
+    )
+    pv.add_holding(pv_setpoint_address + 2, 2, lambda: scale_to_words(runtime.get_engine_state()["pv_nominal_power_kw"]))
+    pv.add_holding(
+        pv_setpoint_address + 4,
+        1,
+        lambda: [1 if runtime.is_device_enabled("pv") else 0],
+        lambda words: runtime.set_device_enabled("pv", bool(words[0])),
+    )
     pv.add_input(0, 2, lambda: scale_to_words(runtime.get_engine_state()["pv_actual_power_kw"]))
     pv.add_input(2, 2, lambda: scale_to_words(runtime.get_engine_state()["pv_available_power_kw"]))
     pv.add_input(4, 2, lambda: scale_to_words(runtime.get_engine_state()["pv_target_power_kw"]))
     pv.add_input(6, 1, lambda: [1 if runtime.is_device_enabled("pv") else 0])
 
     pcs = maps["pcs_inverter"]
-    pcs.add_holding(0, 2, lambda: scale_to_words(runtime.get_engine_state()["pcs_setpoint_pct"], 100.0), lambda words: runtime.update_inputs(pcs_setpoint_pct=words_to_scaled_value(words, 100.0)))
-    pcs.add_holding(2, 2, lambda: scale_to_words(runtime.get_engine_state()["pcs_nominal_power_kw"]))
-    pcs.add_holding(4, 1, lambda: [1 if runtime.is_device_enabled("bess") else 0], lambda words: runtime.set_device_enabled("bess", bool(words[0])))
+    pcs_setpoint_address = modbus_config.pcs_inverter.setpoint_register_address
+    pcs.add_holding(
+        pcs_setpoint_address,
+        2,
+        lambda: scale_to_words(runtime.get_engine_state()["pcs_setpoint_pct"], 100.0),
+        lambda words: runtime.update_inputs(pcs_setpoint_pct=words_to_scaled_value(words, 100.0)),
+    )
+    pcs.add_holding(pcs_setpoint_address + 2, 2, lambda: scale_to_words(runtime.get_engine_state()["pcs_nominal_power_kw"]))
+    pcs.add_holding(
+        pcs_setpoint_address + 4,
+        1,
+        lambda: [1 if runtime.is_device_enabled("bess") else 0],
+        lambda words: runtime.set_device_enabled("bess", bool(words[0])),
+    )
     pcs.add_input(0, 2, lambda: scale_to_words(runtime.get_engine_state()["bess_actual_power_kw"]))
     pcs.add_input(2, 2, lambda: scale_to_words(runtime.get_engine_state()["bess_target_power_kw"]))
     pcs.add_input(4, 1, lambda: [1 if runtime.is_device_enabled("bess") else 0])
@@ -235,7 +257,7 @@ class ModbusServerHandle:
 
 
 def create_modbus_servers(runtime: SimulationRuntime, modbus_config: ModbusConfig) -> list[ModbusServerHandle]:
-    register_maps = build_register_maps(runtime)
+    register_maps = build_register_maps(runtime, modbus_config)
     device_configs: list[tuple[str, ModbusDeviceConfig]] = [
         ("pv_inverter", modbus_config.pv_inverter),
         ("pcs_inverter", modbus_config.pcs_inverter),

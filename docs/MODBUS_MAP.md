@@ -36,11 +36,17 @@ This document describes the current Modbus TCP register map implemented by the s
 
 ## PV Inverter
 
+Configured setpoint holding register base:
+
+- `config.modbus.pv_inverter.setpoint_register_address`
+
 ### Holding Registers
 
-- `0-1`: `pv_setpoint_pct_x100` R/W
-- `2-3`: `pv_nominal_power_kw_x10` R
-- `4`: `pv_enable` R/W
+- `A-(A+1)`: `pv_setpoint_pct_x100` R/W
+- `A+2-(A+3)`: `pv_nominal_power_kw_x10` R
+- `A+4`: `pv_enable` R/W
+
+Where `A = pv_inverter.setpoint_register_address`
 
 ### Input Registers
 
@@ -51,11 +57,17 @@ This document describes the current Modbus TCP register map implemented by the s
 
 ## PCS / BESS Inverter
 
+Configured setpoint holding register base:
+
+- `config.modbus.pcs_inverter.setpoint_register_address`
+
 ### Holding Registers
 
-- `0-1`: `pcs_setpoint_pct_x100` R/W
-- `2-3`: `pcs_nominal_power_kw_x10` R
-- `4`: `pcs_enable` R/W
+- `B-(B+1)`: `pcs_setpoint_pct_x100` R/W
+- `B+2-(B+3)`: `pcs_nominal_power_kw_x10` R
+- `B+4`: `pcs_enable` R/W
+
+Where `B = pcs_inverter.setpoint_register_address`
 
 ### Input Registers
 

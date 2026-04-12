@@ -4,7 +4,7 @@ Python project for experimenting with and simulating AC coupling behavior.
 
 ## Current state
 
-The repository is initialized and connected to GitHub. The project currently contains a starter `main.py` file created from the PyCharm template.
+The repository is initialized and connected to GitHub.
 
 The working simulation specification is stored in [docs/SIMULATION_SPEC.md](/C:/Users/Galtech/PycharmProjects/ACcouplingSimulator/docs/SIMULATION_SPEC.md).
 The implemented Modbus register map is stored in [docs/MODBUS_MAP.md](/C:/Users/Galtech/PycharmProjects/ACcouplingSimulator/docs/MODBUS_MAP.md).
@@ -20,6 +20,16 @@ The first implementation stage now includes:
 - a thread-safe runtime wrapper in `simulator/runtime.py`
 - a sample configuration file in `config/simulation.json`
 - a demo entry point in `main.py`
+
+The current implementation already supports:
+
+- real-time simulation of PV, PCS / BESS, Grid, and local load
+- Modbus TCP endpoints for logical devices
+- a web HMI with:
+  - operations dashboard
+  - live graph for PV, BESS, and Grid
+  - runtime editing of setpoints, nominal powers, pyranometer, load, and enable states
+  - a separate Modbus configuration page
 
 ## Run
 
@@ -39,6 +49,6 @@ In `serve` mode the web HMI also starts by default on `http://127.0.0.1:18080`.
 
 ## Next steps
 
-- Replace the template code in `main.py` with the actual simulator logic.
 - Add dependencies to `requirements.txt` or `pyproject.toml` when they are known.
-- Create the first commit and push it to GitHub.
+- Add automated tests for simulation math, Modbus register behavior, and HMI endpoints.
+- Extend the model with optional SOC / energy counters when needed.

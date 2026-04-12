@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import deque
 from dataclasses import dataclass, field
 import threading
 import time
@@ -17,6 +18,7 @@ class SimulationRuntime:
     _stop_event: threading.Event = field(default_factory=threading.Event, init=False)
     _thread: threading.Thread | None = field(default=None, init=False)
     _last_snapshot: SimulationSnapshot | None = field(default=None, init=False)
+    _history: deque[dict[str, float | int]] = field(default_factory=lambda: deque(maxlen=180), init=False)
 
     def start(self) -> None:
         if self._thread is not None and self._thread.is_alive():
@@ -50,6 +52,18 @@ class SimulationRuntime:
         with self._lock:
             self.engine.config.grid_license_limit_kw = max(0.0, value)
             self.engine.grid.license_limit_kw = self.engine.config.grid_license_limit_kw
+
+    def set_nominal_power_kw(self, device: str, value: float) -> None:
+        with self._lock:
+            sanitized = max(0.0, value)
+            if device == "pv":
+                self.engine.pv.nominal_power_kw = sanitized
+                self.engine.config.pv_inverter.nominal_power_kw = sanitized
+            elif device == "bess":
+                self.engine.bess.nominal_power_kw = sanitized
+                self.engine.config.bess_inverter.nominal_power_kw = sanitized
+            else:
+                raise ValueError(f"unknown device {device}")
 
     def set_device_enabled(self, device: str, enabled: bool) -> None:
         with self._lock:
@@ -98,9 +112,21 @@ class SimulationRuntime:
                 "grid_limit_exceeded": self.engine.grid.limit_exceeded,
             }
 
+    def get_history(self) -> list[dict[str, float | int]]:
+        with self._lock:
+            return list(self._history)
+
     def step_once(self) -> SimulationSnapshot:
         with self._lock:
             self._last_snapshot = self.engine.step()
+            self._history.append(
+                {
+                    "timestamp": int(time.time()),
+                    "pv_power_kw": self._last_snapshot.pv_actual_power_kw,
+                    "bess_power_kw": self._last_snapshot.bess_actual_power_kw,
+                    "grid_power_kw": self._last_snapshot.grid_active_power_kw,
+                }
+            )
             return self._last_snapshot
 
     def _run_loop(self) -> None:

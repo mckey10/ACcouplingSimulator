@@ -30,6 +30,7 @@ The simulator is intended to behave like a real-time test bench for an external 
 - Valid setpoint range: `0..100%`
 - Negative setpoints are not allowed.
 - Actual PV power is limited both by the setpoint and by solar availability from the pyranometer.
+- PV nominal power is currently editable at runtime from the HMI.
 
 ### PCS / BESS Inverter
 
@@ -38,6 +39,7 @@ The simulator is intended to behave like a real-time test bench for an external 
 - Positive power means discharge.
 - Negative power means charge.
 - At this stage there is no SOC model, no efficiency model, and no battery energy capacity limit.
+- PCS / BESS nominal power is currently editable at runtime from the HMI.
 
 ### Grid Meter
 
@@ -60,6 +62,20 @@ The simulator is intended to behave like a real-time test bench for an external 
 - Valid range is `>= 0`
 - It always consumes power.
 - It must be configurable from the HMI.
+
+## Runtime-Editable Parameters In HMI
+
+The current HMI can change these values at runtime:
+
+- `PV setpoint`
+- `PCS setpoint`
+- `PV nominal power`
+- `PCS nominal power`
+- `pyranometer`
+- `local load`
+- `grid license limit`
+- `PV enabled`
+- `BESS enabled`
 
 ## Units
 
@@ -281,4 +297,3 @@ The simulation controller is not a physical device. It exists to expose simulati
 3. Centralize configuration in a text file.
 4. Expose Modbus TCP servers for each logical device.
 5. Add a minimal web HMI for live values and parameter changes.
-

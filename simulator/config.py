@@ -31,6 +31,7 @@ class ModbusDeviceConfig:
     port: int = 15000
     unit_id: int = 1
     enabled: bool = True
+    setpoint_register_address: int = 0
 
 
 @dataclass(slots=True)
@@ -58,6 +59,7 @@ def parse_modbus_device(raw: dict, default_port: int, default_unit_id: int) -> M
         port=int(raw.get("port", default_port)),
         unit_id=int(raw.get("unit_id", default_unit_id)),
         enabled=bool(raw.get("enabled", True)),
+        setpoint_register_address=max(0, int(raw.get("setpoint_register_address", 0))),
     )
 
 
@@ -149,4 +151,5 @@ class SimulationConfig:
             "port": device.port,
             "unit_id": device.unit_id,
             "enabled": device.enabled,
+            "setpoint_register_address": device.setpoint_register_address,
         }

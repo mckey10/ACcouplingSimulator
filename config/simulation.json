@@ -18,37 +18,43 @@
       "host": "127.0.0.1",
       "port": 15001,
       "unit_id": 1,
-      "enabled": true
+      "enabled": true,
+      "setpoint_register_address": 2
     },
     "pcs_inverter": {
       "host": "127.0.0.1",
       "port": 15002,
       "unit_id": 2,
-      "enabled": true
+      "enabled": true,
+      "setpoint_register_address": 0
     },
     "grid_meter": {
       "host": "127.0.0.1",
       "port": 15003,
       "unit_id": 3,
-      "enabled": true
+      "enabled": true,
+      "setpoint_register_address": 0
     },
     "pv_meter": {
       "host": "127.0.0.1",
       "port": 15004,
       "unit_id": 4,
-      "enabled": true
+      "enabled": true,
+      "setpoint_register_address": 0
     },
     "bess_meter": {
       "host": "127.0.0.1",
       "port": 15005,
       "unit_id": 5,
-      "enabled": true
+      "enabled": true,
+      "setpoint_register_address": 0
     },
     "simulation_controller": {
       "host": "127.0.0.1",
       "port": 15010,
       "unit_id": 10,
-      "enabled": true
+      "enabled": false,
+      "setpoint_register_address": 0
     }
   },
   "hmi": {
