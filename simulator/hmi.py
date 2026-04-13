@@ -218,12 +218,40 @@ HTML_PAGE = """<!doctype html>
       font-size: 0.88rem;
       color: #5a6470;
     }
+    .alarm-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .alarm {
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid #d8c9b8;
+      background: #fff7ee;
+    }
+    .alarm strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 1rem;
+    }
+    .alarm.active {
+      background: #ffe2dc;
+      border-color: #ff7c66;
+      color: #8c2515;
+    }
+    .alarm.clear {
+      background: #edf8ef;
+      border-color: #9ad1a5;
+      color: #22603a;
+    }
     @media (max-width: 1100px) {
       .dashboard { grid-template-columns: 1fr; }
     }
     @media (max-width: 640px) {
       main { padding: 14px; }
       .metrics { grid-template-columns: 1fr; }
+      .alarm-grid { grid-template-columns: 1fr; }
       .production-grid, .pill-grid { grid-template-columns: 1fr; }
     }
   </style>
@@ -263,8 +291,9 @@ HTML_PAGE = """<!doctype html>
         <div class="metrics">
           <div class="metric"><span>Power</span><strong id="grid-power">0.0 kW</strong></div>
           <div class="metric"><span>Reactive</span><strong id="grid-reactive">0.0 kVAr</strong></div>
-          <div class="metric"><span>Direction</span><strong id="grid-direction">idle</strong></div>
+          <div class="metric"><span>PF / Cos Phi</span><strong id="grid-cosphi-top">1.000</strong></div>
           <div class="metric"><span>Voltage</span><strong id="grid-voltage">0.0 kV</strong></div>
+          <div class="metric"><span>Direction</span><strong id="grid-direction">idle</strong></div>
         </div>
       </div>
       <div class="meter-group">
@@ -277,6 +306,16 @@ HTML_PAGE = """<!doctype html>
         </div>
       </div>
     </div>
+    <div class="alarm-grid">
+      <div id="alarm-license" class="alarm clear">
+        <span>Alarm 1</span>
+        <strong id="alarm-license-text">Grid license OK</strong>
+      </div>
+      <div id="alarm-import" class="alarm clear">
+        <span>Alarm 2</span>
+        <strong id="alarm-import-text">Grid export/idle</strong>
+      </div>
+    </div>
   </section>
 
   <section class="dashboard">
@@ -286,9 +325,9 @@ HTML_PAGE = """<!doctype html>
         <p class="note">PV, BESS, and Grid meters are drawn on one common vertical scale.</p>
         <div class="chart-wrap">
           <div class="chart-meta">
-            <span class="legend"><span class="legend-swatch" style="background:#d06a37"></span>PV meter</span>
-            <span class="legend"><span class="legend-swatch" style="background:#2f7d4a"></span>BESS meter</span>
-            <span class="legend"><span class="legend-swatch" style="background:#385f8a"></span>Grid meter</span>
+            <span class="legend"><span class="legend-swatch" style="background:#00c853"></span>PV meter</span>
+            <span class="legend"><span class="legend-swatch" style="background:#1976ff"></span>BESS meter</span>
+            <span class="legend"><span class="legend-swatch" style="background:#ff2d2d"></span>Grid meter</span>
             <span id="chart-range" class="note"></span>
           </div>
           <svg id="power-chart" class="chart-svg" viewBox="0 0 960 300" preserveAspectRatio="none"></svg>
@@ -310,8 +349,8 @@ HTML_PAGE = """<!doctype html>
             <label>PV Setpoint %
               <input type="number" step="0.1" name="pv_setpoint_pct">
             </label>
-            <label>PCS Setpoint %
-              <input type="number" step="0.1" name="pcs_setpoint_pct">
+            <label>PCS Setpoint kW
+              <input type="number" step="0.1" name="pcs_setpoint_kw">
             </label>
             <label>PV Nominal kW
               <input type="number" step="0.1" name="pv_nominal_power_kw">
@@ -328,8 +367,8 @@ HTML_PAGE = """<!doctype html>
             <label>PV Reactive Setpoint %
               <input type="number" step="0.1" name="pv_reactive_power_setpoint_pct">
             </label>
-            <label>PV Cos Phi Setpoint
-              <input type="number" step="0.001" min="-1" max="1" name="pv_cos_phi_setpoint">
+            <label>PV Cos Phi Setpoint x1000
+              <input type="number" step="1" min="-1000" max="1000" name="pv_cos_phi_setpoint">
             </label>
             <label>Pyranometer W/m2
               <input type="number" step="1" name="pyranometer_wm2">
@@ -383,15 +422,22 @@ HTML_PAGE = """<!doctype html>
     document.getElementById(id).textContent = value;
   }
 
+  function setAlarm(id, textId, active, activeText, clearText) {
+    const element = document.getElementById(id);
+    element.classList.toggle("active", active);
+    element.classList.toggle("clear", !active);
+    document.getElementById(textId).textContent = active ? activeText : clearText;
+  }
+
   function fillControls(state) {
     const form = document.getElementById("controls-form");
     form.pv_setpoint_pct.value = state.pv_setpoint_pct;
-    form.pcs_setpoint_pct.value = state.pcs_setpoint_pct;
+    form.pcs_setpoint_kw.value = state.pcs_setpoint_kw;
     form.pv_nominal_power_kw.value = state.pv_nominal_power_kw;
     form.pcs_nominal_power_kw.value = state.pcs_nominal_power_kw;
     form.reactive_control_mode.value = String(state.reactive_control_mode);
     form.pv_reactive_power_setpoint_pct.value = state.pv_reactive_power_setpoint_pct;
-    form.pv_cos_phi_setpoint.value = state.pv_cos_phi_setpoint;
+    form.pv_cos_phi_setpoint.value = Math.round(state.pv_cos_phi_setpoint * 1000);
     form.pyranometer_wm2.value = state.pyranometer_wm2;
     form.local_load_kw.value = state.local_load_kw;
     form.voltage_min_kv.value = state.voltage_min_kv;
@@ -441,9 +487,9 @@ HTML_PAGE = """<!doctype html>
     }).join("");
 
     const paths = [
-      { field: "pv_power_kw", color: "#d06a37" },
-      { field: "bess_power_kw", color: "#2f7d4a" },
-      { field: "grid_power_kw", color: "#385f8a" }
+      { field: "pv_power_kw", color: "#00c853" },
+      { field: "bess_power_kw", color: "#1976ff" },
+      { field: "grid_power_kw", color: "#ff2d2d" }
     ].map((series) => `<path d="${buildPath(series.field)}" fill="none" stroke="${series.color}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />`).join("");
 
     svg.innerHTML = `
@@ -470,14 +516,29 @@ HTML_PAGE = """<!doctype html>
     setText("pyranometer", `${state.pyranometer_wm2.toFixed(0)} W/m2`);
     setText("local-load", `${state.local_load_kw.toFixed(1)} kW`);
     setText("grid-voltage", `${state.grid_voltage_kv.toFixed(2)} kV`);
+    setText("grid-cosphi-top", state.grid_cos_phi.toFixed(3));
     setText("pv-cosphi-top", state.pv_cos_phi.toFixed(3));
     setText("pv-voltage-top", `${state.pv_voltage_kv.toFixed(2)} kV`);
     setText("bess-cosphi-top", state.bess_cos_phi.toFixed(3));
     setText("bess-voltage-top", `${state.bess_voltage_kv.toFixed(2)} kV`);
     setText("reactive-mode-top", state.reactive_control_mode === 0 ? "Q" : "Cos Phi");
     setText("voltage-range-top", `${state.voltage_min_kv.toFixed(1)} - ${state.voltage_max_kv.toFixed(1)} kV`);
+    setAlarm(
+      "alarm-license",
+      "alarm-license-text",
+      Boolean(state.grid_limit_exceeded),
+      `Grid license exceeded: ${state.grid_active_power_kw.toFixed(1)} kW`,
+      "Grid license OK"
+    );
+    setAlarm(
+      "alarm-import",
+      "alarm-import-text",
+      state.grid_active_power_kw < 0,
+      `Grid import active: ${state.grid_active_power_kw.toFixed(1)} kW`,
+      "Grid export/idle"
+    );
     setText("pv-setpoint-view", `${state.pv_setpoint_pct.toFixed(1)} %`);
-    setText("pcs-setpoint-view", `${state.pcs_setpoint_pct.toFixed(1)} %`);
+    setText("pcs-setpoint-view", `${state.pcs_setpoint_kw.toFixed(1)} kW`);
     setText("pv-available-view", `${state.pv_available_power_kw.toFixed(1)} kW`);
     setText("grid-license-view", `${state.grid_license_limit_kw.toFixed(1)} kW`);
     setText("pv-nominal-view", `${state.pv_nominal_power_kw.toFixed(1)} kW`);
@@ -500,12 +561,12 @@ HTML_PAGE = """<!doctype html>
     const form = event.currentTarget;
     const payload = {
       pv_setpoint_pct: Number(form.pv_setpoint_pct.value),
-      pcs_setpoint_pct: Number(form.pcs_setpoint_pct.value),
+      pcs_setpoint_kw: Number(form.pcs_setpoint_kw.value),
       pv_nominal_power_kw: Number(form.pv_nominal_power_kw.value),
       pcs_nominal_power_kw: Number(form.pcs_nominal_power_kw.value),
       reactive_control_mode: Number(form.reactive_control_mode.value),
       pv_reactive_power_setpoint_pct: Number(form.pv_reactive_power_setpoint_pct.value),
-      pv_cos_phi_setpoint: Number(form.pv_cos_phi_setpoint.value),
+      pv_cos_phi_setpoint: Number(form.pv_cos_phi_setpoint.value) / 1000,
       pyranometer_wm2: Number(form.pyranometer_wm2.value),
       local_load_kw: Number(form.local_load_kw.value),
       voltage_min_kv: Number(form.voltage_min_kv.value),
@@ -812,7 +873,7 @@ class HmiServer(ThreadingHTTPServer):
     def apply_runtime_update(self, payload: dict) -> None:
         self.runtime.update_inputs(
             pv_setpoint_pct=float(payload.get("pv_setpoint_pct", self.runtime.get_engine_state()["pv_setpoint_pct"])),
-            pcs_setpoint_pct=float(payload.get("pcs_setpoint_pct", self.runtime.get_engine_state()["pcs_setpoint_pct"])),
+            pcs_setpoint_kw=float(payload.get("pcs_setpoint_kw", self.runtime.get_engine_state()["pcs_setpoint_kw"])),
             pv_reactive_power_setpoint_pct=float(payload.get("pv_reactive_power_setpoint_pct", self.runtime.get_engine_state()["pv_reactive_power_setpoint_pct"])),
             pv_cos_phi_setpoint=float(payload.get("pv_cos_phi_setpoint", self.runtime.get_engine_state()["pv_cos_phi_setpoint"])),
             pyranometer_wm2=float(payload.get("pyranometer_wm2", self.runtime.get_engine_state()["pyranometer_wm2"])),

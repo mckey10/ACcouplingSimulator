@@ -17,10 +17,13 @@ Default URL:
     - `BESS Meter`
     - `Grid Meter`
     - `Simulation`
+  - live alarm indicators for:
+    - grid license exceeded
+    - grid import active (`Grid < 0`)
   - production-related controls grouped near the live values
 - Runtime update of:
   - `pv_setpoint_pct`
-  - `pcs_setpoint_pct`
+  - `pcs_setpoint_kw`
   - `pv_nominal_power_kw`
   - `pcs_nominal_power_kw`
   - `pv_reactive_power_setpoint_pct`

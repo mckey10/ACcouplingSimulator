@@ -36,7 +36,7 @@ class SimulationRuntime:
         self,
         *,
         pv_setpoint_pct: float | None = None,
-        pcs_setpoint_pct: float | None = None,
+        pcs_setpoint_kw: float | None = None,
         pv_reactive_power_setpoint_pct: float | None = None,
         pv_cos_phi_setpoint: float | None = None,
         pyranometer_wm2: float | None = None,
@@ -48,7 +48,7 @@ class SimulationRuntime:
         with self._lock:
             self.engine.update_inputs(
                 pv_setpoint_pct=pv_setpoint_pct,
-                pcs_setpoint_pct=pcs_setpoint_pct,
+                pcs_setpoint_kw=pcs_setpoint_kw,
                 pv_reactive_power_setpoint_pct=pv_reactive_power_setpoint_pct,
                 pv_cos_phi_setpoint=pv_cos_phi_setpoint,
                 pyranometer_wm2=pyranometer_wm2,
@@ -104,7 +104,7 @@ class SimulationRuntime:
             self._last_snapshot = snapshot
             return {
                 "pv_setpoint_pct": self.engine.inputs.pv_setpoint_pct,
-                "pcs_setpoint_pct": self.engine.inputs.pcs_setpoint_pct,
+                "pcs_setpoint_kw": self.engine.inputs.pcs_setpoint_kw,
                 "pv_reactive_power_setpoint_pct": self.engine.inputs.pv_reactive_power_setpoint_pct,
                 "pv_cos_phi_setpoint": self.engine.inputs.pv_cos_phi_setpoint,
                 "pyranometer_wm2": self.engine.inputs.pyranometer_wm2,

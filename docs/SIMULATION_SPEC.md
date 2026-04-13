@@ -41,8 +41,8 @@ The simulator is intended to behave like a real-time test bench for an external 
 
 ### PCS / BESS Inverter
 
-- Receives a setpoint in percent of nominal power.
-- Valid setpoint range: `-100..100%`
+- Receives an active power setpoint directly in `kW`.
+- Valid setpoint range: `-PCS_nominal..+PCS_nominal`
 - Positive power means discharge.
 - Negative power means charge.
 - At this stage there is no SOC model, no efficiency model, and no battery energy capacity limit.
@@ -98,19 +98,23 @@ The current HMI layout is organized for live observation:
 
 - grouped live summaries for `PV Meter`, `BESS Meter`, `Grid Meter`, and `Simulation`
 - shared trend graph for `PV`, `BESS`, and `Grid`
+- live alarms for:
+  - `Grid meter exceeded license`
+  - `Grid meter is importing from grid`
 - a separate Modbus configuration page
 
 ## Units
 
 - Power: `kW`
-- Setpoints: `%`
+- PV setpoint: `%`
+- PCS setpoint: `kW`
 - Pyranometer: `W/m2`
 - Nominal inverter powers: `kW`
 
 ## Input Limits
 
 - `PV setpoint`: clamp to `0..100`
-- `PCS setpoint`: clamp to `-100..100`
+- `PCS setpoint`: clamp to `-PCS_nominal..+PCS_nominal`
 - `pyranometer`: clamp to `0..1500`
 - `local load`: clamp to `>= 0`
 
@@ -160,7 +164,7 @@ P_pv_actual = min(P_pv_target, P_pv_available)
 BESS actual power:
 
 ```text
-P_bess_actual = BESS_nominal * PCS_setpoint / 100
+P_bess_actual = clamp(PCS_setpoint_kw, -BESS_nominal, +BESS_nominal)
 ```
 
 PV reactive power in reactive power mode:
@@ -230,7 +234,7 @@ At the current stage:
 - `PV_nominal = 20000 kW`
 - `BESS_nominal = 10000 kW`
 - `PV_setpoint = 50%`
-- `PCS_setpoint = 0%`
+- `PCS_setpoint = 0 kW`
 - `pyranometer = 1500`
 - `P_load = 0`
 
@@ -244,7 +248,7 @@ Results:
 
 - `PV_nominal = 20000 kW`
 - `PV_setpoint = 80%`
-- `PCS_setpoint = 0%`
+- `PCS_setpoint = 0 kW`
 - `pyranometer = 750`
 - `P_load = 0`
 
@@ -260,7 +264,7 @@ Results:
 - `PV_nominal = 20000 kW`
 - `BESS_nominal = 10000 kW`
 - `PV_setpoint = 50%`
-- `PCS_setpoint = -30%`
+- `PCS_setpoint = -3000 kW`
 - `pyranometer = 1500`
 - `P_load = 0`
 
@@ -275,7 +279,7 @@ Results:
 - `PV_nominal = 20000 kW`
 - `BESS_nominal = 10000 kW`
 - `PV_setpoint = 20%`
-- `PCS_setpoint = -80%`
+- `PCS_setpoint = -8000 kW`
 - `pyranometer = 1500`
 - `P_load = 0`
 
@@ -290,7 +294,7 @@ Results:
 - `PV_nominal = 20000 kW`
 - `BESS_nominal = 10000 kW`
 - `PV_setpoint = 50%`
-- `PCS_setpoint = 0%`
+- `PCS_setpoint = 0 kW`
 - `pyranometer = 1500`
 - `P_load = 6000`
 
@@ -327,7 +331,7 @@ It also exposes shared simulation settings such as reactive control mode and vol
 
 ### PCS / BESS Inverter
 
-- `pcs_setpoint_pct`
+- `pcs_setpoint_kw`
 - `pcs_nominal_power_kw`
 - `pcs_actual_power_kw`
 - `pcs_enable`

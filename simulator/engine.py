@@ -75,7 +75,7 @@ class SimulationEngine:
         self,
         *,
         pv_setpoint_pct: float | None = None,
-        pcs_setpoint_pct: float | None = None,
+        pcs_setpoint_kw: float | None = None,
         pv_reactive_power_setpoint_pct: float | None = None,
         pv_cos_phi_setpoint: float | None = None,
         pyranometer_wm2: float | None = None,
@@ -86,8 +86,8 @@ class SimulationEngine:
     ) -> None:
         if pv_setpoint_pct is not None:
             self.inputs.pv_setpoint_pct = pv_setpoint_pct
-        if pcs_setpoint_pct is not None:
-            self.inputs.pcs_setpoint_pct = pcs_setpoint_pct
+        if pcs_setpoint_kw is not None:
+            self.inputs.pcs_setpoint_kw = max(-self.bess.nominal_power_kw, min(self.bess.nominal_power_kw, pcs_setpoint_kw))
         if pv_reactive_power_setpoint_pct is not None:
             self.inputs.pv_reactive_power_setpoint_pct = pv_reactive_power_setpoint_pct
         if pv_cos_phi_setpoint is not None:
@@ -115,7 +115,7 @@ class SimulationEngine:
         if not self.pv.enabled:
             pv_target_power_kw = 0.0
 
-        bess_target_power_kw = self.bess.nominal_power_kw * inputs.pcs_setpoint_pct / 100.0
+        bess_target_power_kw = max(-self.bess.nominal_power_kw, min(self.bess.nominal_power_kw, inputs.pcs_setpoint_kw))
         if not self.bess.enabled:
             bess_target_power_kw = 0.0
 

@@ -31,6 +31,7 @@ The current implementation already supports:
   - operations dashboard
   - top summary grouped by PV, BESS, Grid, and Simulation
   - live graph for PV, BESS, and Grid
+  - live alarms for grid license exceed and grid import
   - runtime editing of active/reactive setpoints, nominal powers, voltage limits, pyranometer, load, and enable states
   - a separate Modbus configuration page
   - automatic Modbus service restart after `Save Modbus Config`

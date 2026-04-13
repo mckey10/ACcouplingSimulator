@@ -26,7 +26,7 @@ def print_runtime_state(step_number: int, runtime: SimulationRuntime) -> None:
     print(
         f"step={step_number:02d} "
         f"pv_setpoint={state['pv_setpoint_pct']:6.1f}% "
-        f"pcs_setpoint={state['pcs_setpoint_pct']:6.1f}% "
+        f"pcs_setpoint={state['pcs_setpoint_kw']:8.1f}kW "
         f"pv={state['pv_actual_power_kw']:8.1f}kW "
         f"bess={state['bess_actual_power_kw']:8.1f}kW "
         f"grid={state['grid_active_power_kw']:8.1f}kW "
@@ -36,17 +36,17 @@ def print_runtime_state(step_number: int, runtime: SimulationRuntime) -> None:
 
 def run_demo(config_path: Path) -> None:
     _, runtime = build_runtime(config_path)
-    runtime.update_inputs(pv_setpoint_pct=50.0, pcs_setpoint_pct=0.0)
+    runtime.update_inputs(pv_setpoint_pct=50.0, pcs_setpoint_kw=0.0)
     for step_number in range(1, 4):
         runtime.step_once()
         print_runtime_state(step_number, runtime)
 
-    runtime.update_inputs(pcs_setpoint_pct=-80.0, pv_setpoint_pct=20.0)
+    runtime.update_inputs(pcs_setpoint_kw=-8000.0, pv_setpoint_pct=20.0)
     for step_number in range(4, 7):
         runtime.step_once()
         print_runtime_state(step_number, runtime)
 
-    runtime.update_inputs(local_load_kw=6000.0, pcs_setpoint_pct=50.0, pv_setpoint_pct=30.0)
+    runtime.update_inputs(local_load_kw=6000.0, pcs_setpoint_kw=5000.0, pv_setpoint_pct=30.0)
     for step_number in range(7, 10):
         runtime.step_once()
         print_runtime_state(step_number, runtime)

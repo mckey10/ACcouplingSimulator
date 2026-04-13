@@ -149,8 +149,8 @@ def build_register_maps(runtime: SimulationRuntime, modbus_config: ModbusConfig)
     pcs.add_holding(
         pcs_setpoint_address,
         2,
-        lambda: scale_to_words(runtime.get_engine_state()["pcs_setpoint_pct"], 100.0),
-        lambda words: runtime.update_inputs(pcs_setpoint_pct=words_to_scaled_value(words, 100.0)),
+        lambda: scale_to_words(runtime.get_engine_state()["pcs_setpoint_kw"]),
+        lambda words: runtime.update_inputs(pcs_setpoint_kw=words_to_scaled_value(words)),
     )
     pcs.add_holding(pcs_setpoint_address + 2, 2, lambda: scale_to_words(runtime.get_engine_state()["pcs_nominal_power_kw"]))
     pcs.add_holding(

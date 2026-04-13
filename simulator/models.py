@@ -10,7 +10,7 @@ from simulator.config import clamp
 @dataclass(slots=True)
 class SimulationInputs:
     pv_setpoint_pct: float = 0.0
-    pcs_setpoint_pct: float = 0.0
+    pcs_setpoint_kw: float = 0.0
     pv_reactive_power_setpoint_pct: float = 0.0
     pv_cos_phi_setpoint: float = 1.0
     pyranometer_wm2: float = 0.0
@@ -24,7 +24,7 @@ class SimulationInputs:
         voltage_max_kv = max(self.voltage_min_kv, self.voltage_max_kv)
         return SimulationInputs(
             pv_setpoint_pct=clamp(self.pv_setpoint_pct, 0.0, 100.0),
-            pcs_setpoint_pct=clamp(self.pcs_setpoint_pct, -100.0, 100.0),
+            pcs_setpoint_kw=self.pcs_setpoint_kw,
             pv_reactive_power_setpoint_pct=clamp(self.pv_reactive_power_setpoint_pct, -100.0, 100.0),
             pv_cos_phi_setpoint=clamp(self.pv_cos_phi_setpoint, -1.0, 1.0),
             pyranometer_wm2=clamp(self.pyranometer_wm2, 0.0, 1500.0),

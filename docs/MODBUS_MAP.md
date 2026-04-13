@@ -76,7 +76,7 @@ Configured setpoint holding register base:
 
 ### Holding Registers
 
-- `B-(B+1)`: `pcs_setpoint_pct_x100` R/W
+- `B-(B+1)`: `pcs_setpoint_kw_x10` R/W
 - `B+2-(B+3)`: `pcs_nominal_power_kw_x10` R
 - `B+4`: `pcs_enable` R/W
 
