@@ -724,7 +724,7 @@ MODBUS_PAGE = """<!doctype html>
       const block = document.createElement("div");
       block.className = "device";
       const setpointRow = setpointRegisterDevices.has(key)
-        ? `<label>Setpoint Holding Register
+        ? `<label>Active Power Setpoint Holding Register
              <input name="${key}.setpoint_register_address" type="number" min="0" value="${cfg.setpoint_register_address ?? 0}">
            </label>`
         : "";

@@ -38,7 +38,7 @@ Default URL:
   - `bess_enabled`
 - separate `Modbus Config` page for:
   - Modbus TCP endpoint settings
-  - setpoint holding register address for `PV inverter` and `PCS inverter`
+  - active power setpoint holding register address for `PV inverter` and `PCS inverter`
   - reactive power and cos phi register addresses for `PV inverter`
 
 ## Modbus Config Behavior

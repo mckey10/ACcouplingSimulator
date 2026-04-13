@@ -39,7 +39,7 @@ This document describes the current Modbus TCP register map implemented by the s
 
 ## PV Inverter
 
-Configured setpoint holding register base:
+Configured active power setpoint holding register base:
 
 - `config.modbus.pv_inverter.setpoint_register_address`
 - `config.modbus.pv_inverter.reactive_power_register_address`
@@ -70,7 +70,7 @@ Where `C = pv_inverter.cos_phi_register_address`
 
 ## PCS / BESS Inverter
 
-Configured setpoint holding register base:
+Configured active power setpoint holding register base:
 
 - `config.modbus.pcs_inverter.setpoint_register_address`
 
